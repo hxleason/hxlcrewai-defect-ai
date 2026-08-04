@@ -1,0 +1,245 @@
+{
+  "表面裂纹": {
+    "4": {
+      "law_references": "TSG 21-2016 6.3.3; GB/T 19624",
+      "mandatory_measures": "立即停机，全面检验，必要时更换受压元件。",
+      "inspection_advice": "执行TOFD，补焊后热处理及耐压试验。"
+    },
+    "3": {
+      "law_references": "TSG 21-2016 6.3.2; GB/T 150.4",
+      "mandatory_measures": "打磨消除裂纹，补焊修复，焊后MT/UT检测。",
+      "inspection_advice": "补焊前预热≥150℃，焊后消氢处理。"
+    },
+    "2": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "1": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "0": {
+      "law_references": "N/A",
+      "mandatory_measures": "无法给出",
+      "inspection_advice": "补充设计壁厚等数据后重新评级"
+    }
+  },
+  "内部裂纹": {
+    "4": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "3": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "2": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "1": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "0": {
+      "law_references": "N/A",
+      "mandatory_measures": "无法给出",
+      "inspection_advice": "补充设计壁厚等数据后重新评级"
+    }
+  },
+  "局部腐蚀减薄": {
+    "4": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "3": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "2": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "1": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "0": {
+      "law_references": "N/A",
+      "mandatory_measures": "无法给出",
+      "inspection_advice": "补充设计壁厚等数据后重新评级"
+    }
+  },
+  "点蚀": {
+    "4": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "3": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "2": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "1": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "0": {
+      "law_references": "N/A",
+      "mandatory_measures": "无法给出",
+      "inspection_advice": "补充设计壁厚等数据后重新评级"
+    }
+  },
+  "均匀腐蚀": {
+    "4": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "3": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "2": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "1": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "0": {
+      "law_references": "N/A",
+      "mandatory_measures": "无法给出",
+      "inspection_advice": "补充设计壁厚等数据后重新评级"
+    }
+  },
+  "机械磨损": {
+    "4": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "3": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "2": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "1": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "0": {
+      "law_references": "N/A",
+      "mandatory_measures": "无法给出",
+      "inspection_advice": "补充设计壁厚等数据后重新评级"
+    }
+  },
+  "变形": {
+    "4": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "3": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "2": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "1": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "0": {
+      "law_references": "N/A",
+      "mandatory_measures": "无法给出",
+      "inspection_advice": "补充设计壁厚等数据后重新评级"
+    }
+  },
+  "焊缝咬边": {
+    "4": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "3": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "2": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "1": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "0": {
+      "law_references": "N/A",
+      "mandatory_measures": "无法给出",
+      "inspection_advice": "补充设计壁厚等数据后重新评级"
+    }
+  },
+  "未焊透": {
+    "4": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "3": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "2": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "1": {
+      "law_references": "",
+      "mandatory_measures": "",
+      "inspection_advice": ""
+    },
+    "0": {
+      "law_references": "N/A",
+      "mandatory_measures": "无法给出",
+      "inspection_advice": "补充设计壁厚等数据后重新评级"
+    }
+  }
+}

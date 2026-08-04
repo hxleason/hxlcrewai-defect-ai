@@ -1,0 +1,24 @@
+# 手动运行一次即可： python -m app.rag.build_index
+import os
+from langchain_community.document_loaders import TextLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+
+def build_faiss_index():
+    loader = TextLoader("app/rag/documents/regulations.txt", encoding='utf-8')
+    documents = loader.load()
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    docs = text_splitter.split_documents(documents)
+
+    embeddings = HuggingFaceEmbeddings(
+        model_name="BAAI/bge-small-zh-v1.5",
+        model_kwargs={'device': 'cpu'},
+        encode_kwargs={'normalize_embeddings': True}
+    )
+    vector_store = FAISS.from_documents(docs, embeddings)
+    vector_store.save_local("app/rag/faiss_index")
+    print("索引构建完成！")
+
+if __name__ == "__main__":
+    build_faiss_index()

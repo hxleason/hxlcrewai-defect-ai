@@ -1,19 +1,14 @@
+"""
+项目路由 
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
 from app import crud, schemas
-from app.db.session import SessionLocal
+from app.db.database import get_db   # ⭐️ 统一从 database 模块导入依赖
 
 router = APIRouter(prefix="/projects", tags=["projects"])
-
-# 依赖：每个请求获取数据库会话
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.post("/", response_model=schemas.ProjectOut)
@@ -23,8 +18,7 @@ def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)
 
 @router.get("/", response_model=List[schemas.ProjectOut])
 def read_projects(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    projects = crud.get_projects(db, skip=skip, limit=limit)
-    return projects
+    return crud.get_projects(db, skip=skip, limit=limit)
 
 
 @router.get("/{project_id}", response_model=schemas.ProjectOut)

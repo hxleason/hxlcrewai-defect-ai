@@ -1,13 +1,15 @@
-def create_analysis_crew(input_text: str) -> dict:
-    # TODO: 实现你的多智能体解析逻辑
-    return {"raw": "分析结果（待实现）"}
+# crew.py（占位符文件）
+from app.crews import (
+    create_analysis_crew as _real_create,
+    run_fmea_evaluation as _real_fmea,
+    run_full_fmea_evaluation as _real_full
+)
 
+def create_analysis_crew(input_text: str) -> dict:
+    return _real_create(input_text)
 
 def run_fmea_evaluation(input_text: str) -> dict:
-    # TODO: 实现 FMEA 评估逻辑
-    return {"evaluation": "评估结果（待实现）"}
-
+    return _real_fmea(input_text)
 
 def run_full_fmea_evaluation(input_text: str) -> dict:
-    # TODO: 实现完整评估逻辑
-    return {"full": "完整结果（待实现）"}
+    return _real_full(input_text)

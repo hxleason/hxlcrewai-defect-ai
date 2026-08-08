@@ -1,24 +1,23 @@
-# 手动运行一次即可： python -m app.rag.build_index
-import os
-from langchain_community.document_loaders import TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
+[标准: GB/T 19624-2019] 第5.3条
+缺陷类型: 裂纹
+当裂纹深度与壁厚之比 ≥ 0.3 时，风险等级评为高风险(≥7)。
+措施: 必须进行安全评估，必要时返修或报废。
+检查建议: 采用 TOFD 或相控阵超声精确测量裂纹扩展。
 
-def build_faiss_index():
-    loader = TextLoader("app/rag/documents/regulations.txt", encoding='utf-8')
-    documents = loader.load()
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    docs = text_splitter.split_documents(documents)
+[标准: GB/T 19624-2019] 第5.4条
+缺陷类型: 裂纹
+若裂纹深度 ≥ 2mm，需记录并监控。
+措施: 建立裂纹监测台账，每季度复测一次。
+检查建议: 优先选用超声横波检测。
 
-    embeddings = HuggingFaceEmbeddings(
-        model_name="BAAI/bge-small-zh-v1.5",
-        model_kwargs={'device': 'cpu'},
-        encode_kwargs={'normalize_embeddings': True}
-    )
-    vector_store = FAISS.from_documents(docs, embeddings)
-    vector_store.save_local("app/rag/faiss_index")
-    print("索引构建完成！")
+[标准: API 579-1/ASME FFS-1] 第3篇
+缺陷类型: 点蚀/腐蚀
+当点蚀深度/壁厚 ≥ 0.5 时，剩余强度因子可能不足，需评估剩余寿命。
+措施: 进行 FFS 评定，确定 MAWP 和剩余寿命。
+检查建议: 建议采用高频导波或声发射进行大面积腐蚀筛查。
 
-if __name__ == "__main__":
-    build_faiss_index()
+[标准: API 579-1] 第4篇
+缺陷类型: 夹杂/气孔
+单个夹杂长度 ≤ 10mm 时，一般不影响使用，但需注意密集区。
+措施: 若发现密集夹杂，应按体积占比评估。
+检查建议: 使用射线检测进行体积类缺陷定位。

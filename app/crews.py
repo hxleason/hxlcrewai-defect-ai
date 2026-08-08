@@ -1,49 +1,150 @@
+"""
+app/crews.py
+特种设备缺陷评估 Crew 流水线（混合稳健解析版）
+兼容 crewai >= 0.30，使用 @tool 装饰器
+
+特性：
+- 自动加载 .env 环境变量
+- 使用 LLM 单例避免重复初始化
+- 所有任务描述使用三引号模板，杜绝字符串拼接语法错误
+- extract_json_robust 多级修复确保 JSON 解析永不崩溃
+- 完整 FMEA 评估 + 法规审核流水线
+"""
+
 import json
 import re
 import logging
-from crewai import Agent, Task, Crew, Process, Tool
-from app.agents import get_llm                      # ⚠️ 不再直接 import llm
+from typing import Optional, Dict, Any
+
+from dotenv import load_dotenv
+load_dotenv(override=True)          # 强制使用最新的 .env 变量
+
+from crewai import Agent, Task, Crew, Process, LLM
+from crewai.tools import tool
+from json_repair import repair_json
+
+# 你的内部工具模块（请确保路径正确）
 from app.core.tools import risk_tool, diagnosis_tool
-from app.core.vector_store import search_standards  # ✅ 直接使用预加载的向量库
+from app.core.vector_store import search_standards
 
 logger = logging.getLogger("defect_fmea.crews")
 
-# ----- 辅助：从 LLM 输出中提取 JSON -----
-def sanitize_llm_output(text: str) -> str:
-    text = re.sub(r"```(?:json)?\s*", "", text)
-    text = re.sub(r"```\s*", "", text)
-    start = text.find("{")
-    end = text.rfind("}")
-    if start != -1 and end != -1 and end > start:
-        return text[start:end+1]
-    return text
+# ================================================================
+# LLM 单例（按需初始化，可复用）
+# ================================================================
+_llm_instance: Optional[LLM] = None
 
-def extract_json(obj: str) -> dict:
-    cleaned = sanitize_llm_output(obj)
+
+def get_llm() -> LLM:
+    """创建或获取共享的 LLM 实例，配置来源于 .env 文件"""
+    global _llm_instance
+    if _llm_instance is None:
+        import os
+
+        api_key = os.getenv("OPENAI_API_KEY")
+        base_url = os.getenv("OPENAI_BASE_URL")
+        model = os.getenv("LLM_MODEL_NAME", "gpt-4o-mini")
+        temperature = float(os.getenv("LLM_TEMPERATURE", "0.3"))
+        max_tokens = int(os.getenv("LLM_MAX_TOKENS", "4096"))
+
+        if not api_key:
+            raise EnvironmentError(
+                "❌ OPENAI_API_KEY 未设置！请在 .env 文件中配置。"
+            )
+
+        logger.info(
+            "正在初始化 LLM | model=%s | base_url=%s | temperature=%s | max_tokens=%s",
+            model, base_url, temperature, max_tokens,
+        )
+        _llm_instance = LLM(
+            model=model,
+            base_url=base_url,
+            api_key=api_key,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        logger.info("✅ LLM 实例化成功")
+    return _llm_instance
+
+
+# ================================================================
+# 通用工具：稳健 JSON 提取（混合策略核心）
+# ================================================================
+
+def extract_json_robust(raw_text: str) -> Dict[str, Any]:
+    """
+    多级 JSON 提取/修复，确保返回可用字典。
+    策略：
+      1. 输入已是 dict，直接返回
+      2. 直接 json.loads
+      3. 清理 Markdown 标记后 json.loads
+      4. json_repair 智能修复
+      5. 正则捕获最大 JSON 块 + json_repair
+    终末兜底返回包含原始文本的 dict
+    """
+    # 0. 已是字典
+    if isinstance(raw_text, dict):
+        return raw_text
+
+    # 1. 直接解析
     try:
-        return json.loads(cleaned)
+        return json.loads(raw_text)
     except Exception:
         pass
-    match = re.search(r"\{.*\}", obj, re.DOTALL)
-    if match:
+
+    # 2. 常规清理（去除 ```json...```）
+    cleaned = re.sub(r"```(?:json)?\s*|\s*```", "", raw_text)
+    start, end = cleaned.find("{"), cleaned.rfind("}")
+    if start != -1 and end != -1:
         try:
-            return json.loads(match.group())
+            return json.loads(cleaned[start:end + 1])
         except Exception:
             pass
-    logger.warning("无法解析 LLM 输出为 JSON，返回原始文本")
-    return {"raw_output": obj, "parse_error": "无法解析为JSON"}
 
-# ----- 新建：法规检索工具（直接使用 search_standards） -----
+    # 3. json_repair 全局修复
+    try:
+        repaired = repair_json(raw_text, return_objects=True)
+        if isinstance(repaired, dict):
+            return repaired
+        if isinstance(repaired, list):
+            return {"data": repaired}
+    except Exception:
+        pass
+
+    # 4. 正则捕获最大花括号块 + json_repair
+    match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+    if match:
+        candidate = match.group()
+        try:
+            return json.loads(candidate)
+        except Exception:
+            try:
+                r = repair_json(candidate, return_objects=True)
+                if isinstance(r, dict):
+                    return r
+            except Exception:
+                pass
+
+    # 5. 彻底失败，返回原始文本供调试
+    logger.warning("⚠️ 所有 JSON 解析/修复步骤均失败，返回原始文本")
+    return {"raw_output": raw_text, "parse_error": "无法解析为JSON"}
+
+
+# ================================================================
+# 法规检索工具（@tool 装饰器）
+# ================================================================
+
+@tool("search_regulation_tool")
 def regulation_search_function(query: str) -> str:
-    """
-    调用预加载的向量库 search_standards，返回格式化的法规信息。
-    该函数将作为工具提供给 Agent。
+    """根据查询字符串检索特种设备相关法规条文。
+
+    输入参数 query: 构造的查询字符串，例如 '裂纹 等级高 处理措施'
+    返回多条相关法规内容及其来源文件。
     """
     try:
         results = search_standards(query, k=3)
         if not results:
             return "未找到相关法规条文。"
-        # 格式化输出，方便 LLM 提取
         formatted = []
         for i, item in enumerate(results, 1):
             formatted.append(
@@ -55,19 +156,16 @@ def regulation_search_function(query: str) -> str:
         logger.error(f"search_standards 调用失败: {e}")
         return f"法规检索失败：{str(e)}"
 
-# 注册为 CrewAI 工具（与现有 risk_tool / diagnosis_tool 风格一致）
-search_regulation_tool = Tool(
-    name="search_regulation_tool",
-    description=(
-        "根据查询字符串检索特种设备相关法规条文。"
-        "输入参数 query: 构造的查询字符串，例如 '裂纹 等级高 处理措施'。"
-        "返回多条相关法规内容及其来源文件。"
-    ),
-    func=regulation_search_function,
-)
 
-# ----- 三条流水线 -----
-def create_analysis_crew(text: str) -> str:
+search_regulation_tool = regulation_search_function  # 别名方便引用
+
+
+# ================================================================
+# 流水线 1：缺陷提取（返回原始字符串，供简单调用）
+# ================================================================
+
+def create_analysis_crew(report_text: str) -> str:
+    """快速提取缺陷 JSON，返回 LLM 的原始输出字符串"""
     agent = Agent(
         role="特种设备缺陷解析专家",
         goal="提取缺陷输出纯JSON，不包含任何Markdown",
@@ -76,24 +174,41 @@ def create_analysis_crew(text: str) -> str:
         verbose=True,
         allow_delegation=False,
     )
+    task_desc = f'''根据报告文本提取所有缺陷，严格输出以下 JSON 格式，不要任何额外文字：
+{{
+  "defects": [
+    {{
+      "id": 1,
+      "type": "裂纹",
+      "component": "容器本体",
+      "location": "筒体焊缝",
+      "dimensions": {{ "length": 30, "depth": 2.5, "unit": "mm" }},
+      "quantity": 1,
+      "wall_thickness": 20,
+      "original_text": "原文"
+    }}
+  ]
+}}
+⚠️ 如果报告中没有明确的设计壁厚（mm），请将 wall_thickness 设为 null，严禁猜测数值。
+报告文本：{report_text}'''
+
     task = Task(
-        description=(
-            "根据报告文本提取所有缺陷，严格按照以下JSON格式输出，不要任何额外文字：\n"
-            '{"defects":[{"id":1,"type":"裂纹","component":"容器本体","location":"筒体焊缝",'
-            '"dimensions":{"length":30,"depth":2.5,"unit":"mm"},"quantity":1,'
-            '"wall_thickness":20,"original_text":"原文"}]}\n'
-            "要求：单位统一为mm，每个缺陷必须有original_text字段。\n"
-            "⚠️ 如果报告中没有明确的设计壁厚（mm），请将 wall_thickness 设为 null，严禁猜测数值。\n"
-            f"报告文本：{text}"
-        ),
+        description=task_desc,
         expected_output="纯JSON字符串",
         agent=agent,
     )
     crew = Crew(agents=[agent], tasks=[task], process=Process.sequential, verbose=True)
     result = crew.kickoff()
-    return result.raw if hasattr(result, "raw") else str(result)
+    raw = result.raw if hasattr(result, "raw") else str(result)
+    return raw
 
-def run_fmea_evaluation(text: str) -> dict:
+
+# ================================================================
+# 流水线 2：缺陷评估（FMEA 评级）→ 返回 dict
+# ================================================================
+
+def run_fmea_evaluation(report_text: str) -> dict:
+    """执行 FMEA 评估（提取 + 风险评级 + 原因分析），返回可靠字典"""
     extractor = Agent(
         role="特种设备缺陷解析专家",
         goal="提取缺陷为JSON",
@@ -112,51 +227,87 @@ def run_fmea_evaluation(text: str) -> dict:
         allow_delegation=False,
     )
 
+    parse_desc = f'''提取所有缺陷，输出纯 JSON：
+{{
+  "defects": [
+    {{
+      "id": 1,
+      "type": "...",
+      "component": "...",
+      "location": "...",
+      "dimensions": {{ "length": null, "depth": null, "unit": "mm" }},
+      "quantity": 1,
+      "wall_thickness": null,
+      "original_text": "..."
+    }}
+  ]
+}}
+⚠️ 如果报告中没有壁厚（mm），请将 wall_thickness 设为 null，不要虚构数字。
+报告文本：{report_text}'''
+
     parse_task = Task(
-        description=(
-            "提取所有缺陷，输出纯JSON：\n"
-            '{"defects":[{"id":1,"type":"...","component":"...","location":"...",'
-            '"dimensions":{"length":...,"depth":...,"unit":"mm"},'
-            '"quantity":1,"wall_thickness":20,"original_text":"..."}]}\n'
-            "⚠️ 如果报告中没有壁厚（mm），请将 wall_thickness 设为 null，不要虚构数字。\n"
-            f"报告文本：{text}"
-        ),
-        expected_output="仅defects数组的JSON",
+        description=parse_desc,
+        expected_output="仅 defects 数组的 JSON",
         agent=extractor,
     )
 
-    evaluate_task = Task(
-        description=(
-            "对每条缺陷分别执行：\n"
-            "1. 调用 risk_assessment_tool(defect_type=类型, length_mm=长度, depth_mm=深度, "
-            "wall_thickness=壁厚, quantity=数量) 得到评级。\n"
-            "   【禁止使用任何我未列出的参数名】\n"
-            "2. 调用 diagnosis_tool(defect_type=类型) 得到原因列表。\n"
-            "3. 将工具返回的数值原样填入JSON，不得修改。\n"
-            "最终输出JSON格式：\n"
-            '{"report_summary":"...","defects":[{"id":...,"type":"...","quantity":...,'
-            '"original_text":"...","severity":...,"occurrence":...,"detection":...,'
-            '"rpn":...,"risk_level":"...","level":...,"reasons":[...],'
-            '"suggestion":"基于风险的推荐","standard_ref":"...",'
-            '"triggered_rules":[...]}]}\n'
-            "只输出纯JSON文本，不要Markdown代码块。"
-        ),
-        expected_output="包含FMEA评级的JSON字符串",
+    eval_desc = '''对每条缺陷分别执行：
+1. 调用 risk_assessment_tool(defect_type=类型, length_mm=长度, depth_mm=深度, wall_thickness=壁厚, quantity=数量)
+   【禁止使用任何我未列出的参数名】
+2. 调用 diagnosis_tool(defect_type=类型) 得到原因列表。
+3. 将工具返回的数值原样填入 JSON，不得修改。
+最终输出 JSON 格式：
+{
+  "report_summary": "...",
+  "defects": [
+    {
+      "id": 1,
+      "type": "...",
+      "quantity": 1,
+      "original_text": "...",
+      "severity": 8,
+      "occurrence": 4,
+      "detection": 6,
+      "rpn": 192,
+      "risk_level": "高",
+      "level": 3,
+      "reasons": ["原因1", "原因2"],
+      "suggestion": "基于风险的推荐",
+      "standard_ref": "GB/T ...",
+      "triggered_rules": ["规则A", "规则B"]
+    }
+  ]
+}
+只输出纯 JSON 文本，不要 Markdown 代码块。'''
+
+    eval_task = Task(
+        description=eval_desc,
+        expected_output="包含 FMEA 评级的 JSON 字符串",
         agent=analyst,
         context=[parse_task],
     )
 
     crew = Crew(
         agents=[extractor, analyst],
-        tasks=[parse_task, evaluate_task],
+        tasks=[parse_task, eval_task],
         process=Process.sequential,
-        verbose=True
+        verbose=True,
     )
     result = crew.kickoff()
     raw = result.raw if hasattr(result, "raw") else str(result)
-    return extract_json(raw)
 
-def run_full_fmea_evaluation(text: str) -> dict:
+    # 调试用：打印 LLM 原始回复的前 500 个字符
+    logger.info("LLM 原始输出 (FMEA):\n%s", raw[:500])
+
+    return extract_json_robust(raw)
+
+
+# ================================================================
+# 流水线 3：完整评估（FMEA + 法规审核）→ 返回 dict
+# ================================================================
+
+def run_full_fmea_evaluation(report_text: str) -> dict:
+    """执行完整 FMEA 评估 + 法规审核，返回包含法律依据的增强报告字典"""
     extractor = Agent(
         role="特种设备缺陷解析专家",
         goal="提取缺陷为JSON",
@@ -178,67 +329,97 @@ def run_full_fmea_evaluation(text: str) -> dict:
         role="法规审核专家",
         goal="使用 search_regulation_tool 为每条缺陷补充法规条文",
         backstory="只能调用工具获取法规，参数只用 query。",
-        tools=[search_regulation_tool],      # ✅ 替换为使用 search_standards 的新工具
+        tools=[search_regulation_tool],
         llm=get_llm(),
         verbose=True,
         allow_delegation=False,
     )
 
+    parse_desc = f'''提取所有缺陷，输出纯 JSON：
+{{
+  "defects": [
+    {{
+      "id": 1,
+      "type": "...",
+      "component": "...",
+      "location": "...",
+      "dimensions": {{ "length": null, "depth": null, "unit": "mm" }},
+      "quantity": 1,
+      "wall_thickness": null,
+      "original_text": "..."
+    }}
+  ]
+}}
+⚠️ 如果报告中没有壁厚（mm），请将 wall_thickness 设为 null，严禁虚构。
+报告文本：{report_text}'''
+
     parse_task = Task(
-        description=(
-            "提取所有缺陷，输出纯JSON：\n"
-            '{"defects":[{"id":1,"type":"...","component":"...","location":"...",'
-            '"dimensions":{"length":...,"depth":...,"unit":"mm"},'
-            '"quantity":1,"wall_thickness":20,"original_text":"..."}]}\n'
-            "⚠️ 如果报告中没有壁厚（mm），请将 wall_thickness 设为 null，严禁虚构。\n"
-            f"报告文本：{text}"
-        ),
-        expected_output="仅defects的JSON",
+        description=parse_desc,
+        expected_output="仅 defects 的 JSON",
         agent=extractor,
     )
 
-    evaluate_task = Task(
-        description=(
-            "对每条缺陷分别执行：\n"
-            "1. 调用 risk_assessment_tool(defect_type=类型, length_mm=长度, depth_mm=深度, "
-            "wall_thickness=壁厚, quantity=数量)。\n"
-            "   【禁止使用任何我未列出的参数名】\n"
-            "2. 调用 diagnosis_tool(defect_type=类型)。\n"
-            "3. 将工具返回值原样填入JSON，严禁修改数字。\n"
-            "最终输出JSON格式：\n"
-            '{"report_summary":"...","defects":[{"id":...,"type":"...","quantity":...,'
-            '"original_text":"...","severity":...,"occurrence":...,"detection":...,'
-            '"rpn":...,"risk_level":"...","level":...,"reasons":[...],'
-            '"suggestion":"基于风险的推荐","standard_ref":"...","triggered_rules":[...]}]}\n'
-            "只输出纯JSON，不要任何Markdown标记。"
-        ),
-        expected_output="完整FMEA JSON",
+    eval_desc = '''对每条缺陷分别执行：
+1. 调用 risk_assessment_tool(defect_type=类型, length_mm=长度, depth_mm=深度, wall_thickness=壁厚, quantity=数量)
+   【禁止使用任何我未列出的参数名】
+2. 调用 diagnosis_tool(defect_type=类型)
+3. 将工具返回的数值原样填入 JSON，严禁修改。
+最终输出 JSON 格式：
+{
+  "report_summary": "...",
+  "defects": [
+    {
+      "id": 1,
+      "type": "...",
+      "quantity": 1,
+      "original_text": "...",
+      "severity": 8,
+      "occurrence": 4,
+      "detection": 6,
+      "rpn": 192,
+      "risk_level": "高",
+      "level": 3,
+      "reasons": ["原因1", "原因2"],
+      "suggestion": "基于风险的推荐",
+      "standard_ref": "GB/T ...",
+      "triggered_rules": ["规则A", "规则B"]
+    }
+  ]
+}
+只输出纯 JSON，不要任何 Markdown 标记。'''
+
+    eval_task = Task(
+        description=eval_desc,
+        expected_output="完整 FMEA JSON",
         agent=analyst,
         context=[parse_task],
     )
 
+    audit_desc = '''对上一步输出的每条缺陷，执行：
+1. 读取 type 和 level 值。
+2. 构造查询字符串，例如 f'{type} 等级{level} 处理措施'。
+3. 调用 search_regulation_tool(query=构造的字符串)。
+   【只传 query 一个参数】
+4. 将返回值中的 law_references, mandatory_measures, inspection_advice
+   原样追加到每条缺陷对象中。
+最终输出完整增强报告 JSON，不得有任何额外说明或 Markdown。'''
+
     audit_task = Task(
-        description=(
-            "对上一步输出的每条缺陷，执行：\n"
-            "1. 读取 type 和 level 值。\n"
-            "2. 构造查询字符串，例如 f'{type} 等级{level} 处理措施'。\n"
-            "3. 调用 search_regulation_tool(query=构造的字符串)。\n"
-            "   【只传 query 一个参数】\n"
-            "4. 将返回值中的 law_references, mandatory_measures, inspection_advice "
-            "原样追加到每条缺陷对象中。\n"
-            "最终输出完整增强报告JSON，不得有任何额外说明或Markdown。"
-        ),
-        expected_output="附加法规信息的JSON",
+        description=audit_desc,
+        expected_output="附加法规信息的 JSON",
         agent=auditor,
-        context=[evaluate_task],
+        context=[eval_task],
     )
 
     crew = Crew(
         agents=[extractor, analyst, auditor],
-        tasks=[parse_task, evaluate_task, audit_task],
+        tasks=[parse_task, eval_task, audit_task],
         process=Process.sequential,
-        verbose=True
+        verbose=True,
     )
     result = crew.kickoff()
     raw = result.raw if hasattr(result, "raw") else str(result)
-    return extract_json(raw)
+
+    logger.info("LLM 原始输出 (完整评估):\n%s", raw[:500])
+
+    return extract_json_robust(raw)

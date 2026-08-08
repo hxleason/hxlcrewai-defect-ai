@@ -7,113 +7,113 @@
     "source": "默认值"
   },
   {
-    "rule_id": "SEV_CRACK_BASE",
-    "description": "表面裂纹初始严重度",
+    "rule_id": "SEV_CRACK",
+    "description": "裂纹基础严重度",
     "condition": {"type_contains": "裂纹"},
     "effect": {"severity": 4},
-    "source": "企业经验"
+    "source": "经验规则"
   },
   {
-    "rule_id": "SEV_CRACK_DEPTH_2MM",
-    "description": "裂纹深度≥2mm时严重度上调",
+    "rule_id": "SEV_CRACK_D2",
+    "description": "裂纹深度≥2mm",
     "condition": {"type_contains": "裂纹", "depth_min": 2.0},
     "effect": {"severity": 5},
-    "source": "企业经验"
+    "source": "经验规则"
   },
   {
-    "rule_id": "SEV_CRACK_DEPTH_RATIO_03",
-    "description": "裂纹深度/壁厚≥0.3时严重度调至7",
+    "rule_id": "SEV_CRACK_R03",
+    "description": "裂纹深度/壁厚≥0.3",
     "condition": {"type_contains": "裂纹", "depth_wall_ratio_min": 0.3},
     "effect": {"severity": 7},
     "source": "GB/T 19624-2019"
   },
   {
-    "rule_id": "SEV_CRACK_DEPTH_RATIO_05",
-    "description": "裂纹深度/壁厚≥0.5时严重度调至9",
+    "rule_id": "SEV_CRACK_R05",
+    "description": "裂纹深度/壁厚≥0.5",
     "condition": {"type_contains": "裂纹", "depth_wall_ratio_min": 0.5},
     "effect": {"severity": 9},
     "source": "GB/T 19624-2019"
   },
   {
-    "rule_id": "SEV_PITTING_BASE",
-    "description": "点蚀/腐蚀初始严重度",
+    "rule_id": "SEV_PITTING",
+    "description": "点蚀/腐蚀基础",
     "condition": {"type_contains": ["点蚀", "腐蚀"]},
     "effect": {"severity": 4},
     "source": "API 579"
   },
   {
-    "rule_id": "SEV_PITTING_DEPTH_2MM",
-    "description": "点蚀深度≥2mm时上调",
+    "rule_id": "SEV_PITTING_D2",
+    "description": "点蚀深度≥2mm",
     "condition": {"type_contains": ["点蚀", "腐蚀"], "depth_min": 2.0},
     "effect": {"severity": 6},
     "source": "API 579"
   },
   {
-    "rule_id": "SEV_PITTING_DEPTH_RATIO_05",
-    "description": "点蚀深度/壁厚≥0.5时严重度调至8",
+    "rule_id": "SEV_PITTING_R05",
+    "description": "点蚀深度/壁厚≥0.5",
     "condition": {"type_contains": ["点蚀", "腐蚀"], "depth_wall_ratio_min": 0.5},
     "effect": {"severity": 8},
     "source": "API 579"
   },
   {
-    "rule_id": "SEV_POROSITY_SMALL",
-    "description": "气孔/夹杂长度<10mm",
+    "rule_id": "SEV_POROSITY_S",
+    "description": "气孔/夹杂长度≤10mm",
     "condition": {"type_contains": ["气孔", "夹杂"], "length_max": 10},
     "effect": {"severity": 3},
     "source": "经验规则"
   },
   {
-    "rule_id": "SEV_POROSITY_LARGE",
-    "description": "气孔/夹杂长度≥10mm",
+    "rule_id": "SEV_POROSITY_L",
+    "description": "气孔/夹杂长度>10mm",
     "condition": {"type_contains": ["气孔", "夹杂"], "length_min": 10},
     "effect": {"severity": 5},
     "source": "经验规则"
   },
   {
     "rule_id": "OCC_BASE",
-    "description": "发生度基础值",
+    "description": "默认发生度",
     "condition": {},
     "effect": {"occurrence": 4},
     "source": "默认"
   },
   {
-    "rule_id": "OCC_QTY_1",
-    "description": "单条缺陷降低发生度",
+    "rule_id": "OCC_Q1",
+    "description": "数量=1",
     "condition": {"quantity_eq": 1},
     "effect": {"occurrence": 3},
     "source": "默认"
   },
   {
-    "rule_id": "OCC_QTY_3",
-    "description": "数量≥3时升高",
+    "rule_id": "OCC_Q3",
+    "description": "数量≥3",
     "condition": {"quantity_min": 3},
     "effect": {"occurrence": 5},
     "source": "默认"
   },
   {
-    "rule_id": "OCC_QTY_5",
-    "description": "数量≥5时发生度高",
+    "rule_id": "OCC_Q5",
+    "description": "数量≥5",
     "condition": {"quantity_min": 5},
     "effect": {"occurrence": 7},
     "source": "默认"
   },
   {
     "rule_id": "DET_CRACK",
-    "description": "裂纹类缺陷较难检测",
+    "description": "裂纹检出度",
     "condition": {"type_contains": "裂纹"},
     "effect": {"detection": 6},
     "source": "默认"
   },
   {
     "rule_id": "DET_PITTING",
-    "description": "点蚀/腐蚀检测度中等",
+    "description": "点蚀/腐蚀检出度",
     "condition": {"type_contains": ["点蚀", "腐蚀"]},
     "effect": {"detection": 5},
     "source": "默认"
   },
   {
     "rule_id": "DET_BASE",
-    "description": "其他缺陷检测度默认",
+    "description": "默认检出度",
     "condition": {},
     "effect": {"detection": 4},
     "source": "默认"

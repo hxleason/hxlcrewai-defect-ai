@@ -1,46 +1,60 @@
 """
-数据库引擎、会话、自动建表
+项目全局唯一的数据库引擎、会话工厂、ORM 基类。
+所有其他模块（路由、CRUD、Celery 任务）均通过本文件导入：
+    from app.db.database import Base, engine, SessionLocal, get_db
+
+配置来源: app.core.config.settings（基于 pydantic-settings，自动加载 .env）
+支持数据库：SQLite（开发默认） / MySQL / PostgreSQL（生产）
 """
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-
-# ❕ 注意：下面的 settings 来自我们刚刚创建好的 app.core.config
+from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
 
-# 如果还没有定义 Base，可以在这里临时声明（后面会统一到 models 中）
-# 这里假设我们会在 app.models.db_models 里定义所有模型，并且它们都继承自同一个 Base
-# 为避免循环引用，我们先创建一个临时的 Base，实际使用时再用那个 Base
+# ──────────────── 全局 ORM 基类 ────────────────
 Base = declarative_base()
 
-# 针对 SQLite 的特殊处理
-connect_args = {}
-if settings.DATABASE_URL.startswith("sqlite"):
-    connect_args["check_same_thread"] = False
+# ──────────────── 读取配置 ────────────────
+DATABASE_URL = settings.DATABASE_URL
 
+# ──────────────── 构建引擎参数（智能适配数据库类型） ────────────────
+connect_args = {}
+engine_kwargs = {}
+
+if DATABASE_URL.startswith("sqlite"):
+    # SQLite 必须允许多线程访问（FastAPI 默认多线程）
+    connect_args["check_same_thread"] = False
+    # SQLite 不支持连接池，显式移除池化参数（避免警告）
+    engine_kwargs.pop("pool_size", None)
+    engine_kwargs.pop("max_overflow", None)
+else:
+    # 服务器数据库（MySQL/PostgreSQL）启用连接池
+    engine_kwargs["pool_size"] = getattr(settings, "DB_POOL_SIZE", 20)
+    engine_kwargs["max_overflow"] = getattr(settings, "DB_MAX_OVERFLOW", 0)
+
+# 生成引擎（echo 建议通过配置控制，方便开发调试）
 engine = create_engine(
-    settings.DATABASE_URL,
+    DATABASE_URL,
     connect_args=connect_args,
-    echo=False,   # 开发时可设 True 看 SQL
-    pool_size=settings.DB_POOL_SIZE,
-    max_overflow=settings.DB_MAX_OVERFLOW,
+    echo=getattr(settings, "DB_ECHO", False),
+    **engine_kwargs,
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# ──────────────── 会话工厂 ────────────────
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
 
-def create_tables():
-    """
-    根据模型创建所有表（需要提前 import 所有模型类）
-    会在 FastAPI 启动时调用
-    """
-    # 这里必须从 db_models 导入所有模型，否则 Base.metadata 不会包含它们
-    from app.models.db_models import Base as ModelBase
-    ModelBase.metadata.create_all(bind=engine)
-
+# ──────────────── FastAPI 依赖注入 ────────────────
 def get_db():
-    """FastAPI 路由专用依赖：获取数据库会话"""
+    """每个请求获取一个数据库会话，结束后自动安全关闭"""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+# ──────────────── 自动注册所有 ORM 模型 ────────────────
+# 必须放在文件末尾，避免循环引用；所有模型类必须继承本文件的 Base
+import app.models  # noqa: E402, F401

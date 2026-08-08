@@ -1,13 +1,47 @@
-# 模型文件不入库
+# ===== Python 缓存（必须） =====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py[cod]
+*$py.class
+.Python
+
+# ===== 虚拟环境 =====
+.venv/
+venv/
+env/
+
+# ===== IDE 配置 =====
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===== 模型文件（不能进Git） =====
 /model/
 bge-small-zh-v1.5/
 *.safetensors
 *.bin
+*.pt
+*.pth
 
-# 其他不该传的东西
-.env
-__pycache__/
-*.pyc
+# ===== 数据库文件 =====
+*.db
 fmea.db
 test.db
+
+# ===== 环境变量/密钥 =====
+.env
+.env.local
+
+# ===== 临时/调试文件 =====
 project_dump.txt
+*.log
+.DS_Store
+Thumbs.db
+
+# ===== 测试/覆盖率 =====
+.pytest_cache/
+.coverage
+htmlcov/

@@ -1,1 +1,13 @@
+# 模型文件不入库
+/model/
+bge-small-zh-v1.5/
+*.safetensors
+*.bin
+
+# 其他不该传的东西
 .env
+__pycache__/
+*.pyc
+fmea.db
+test.db
+project_dump.txt

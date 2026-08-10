@@ -1,6 +1,24 @@
-# app/rag/vector_store.py
+"""
+RAG 向量存储模块 – FAISS 专用（安全加固版 + 线程安全单例）
+========================================================
+负责加载预构建的 FAISS 本地向量索引，并提供统一的检索接口。
+
+🔒 安全声明：
+- FAISS 索引文件内部使用 Pickle 序列化，加载时需传递
+  `allow_dangerous_deserialization=True`，存在代码执行风险。
+- 为避免意外加载不可信的外部索引，本站点要求**必须设置环境变量
+  ALLOW_FAISS_DANGEROUS_DESERIALIZATION=1** 才能启动，以明确表示
+  您已确认索引文件来源可信。
+- 部署时请保证 FAISS 索引目录仅由本系统写入，严禁接收用户上传的索引文件。
+
+🧵 线程安全：
+- 使用 threading.Lock 保护全局单例的初始化，避免多线程竞态条件。
+- 支持 Celery Worker 预加载，且与懒加载无缝协作。
+"""
+
 import os
 import logging
+import threading
 from typing import Optional
 from pathlib import Path
 
@@ -13,8 +31,9 @@ logger = logging.getLogger(__name__)
 # 索引文件存放路径（优先取环境变量，否则使用默认值）
 FAISS_INDEX_DIR = os.getenv("FAISS_INDEX_DIR", "app/rag/faiss_index")
 
-# ✅ 全局变量，用于缓存预加载的向量库（Worker 进程使用）
-_vector_store: Optional[FAISS] = None
+# ── 线程安全单例组件 ──
+_vector_store: Optional[FAISS] = None          # 缓存的向量库实例
+_vector_store_lock = threading.Lock()          # 保护 _vector_store 的锁
 
 
 def _get_local_model_path() -> str:
@@ -41,7 +60,7 @@ def _get_local_model_path() -> str:
         logger.info(f"使用备选 model 目录: {candidate}")
         return str(candidate)
 
-    # 4. 如果都不存在，抛出错误（或返回模型名要求联网，视需求修改）
+    # 4. 如果都不存在，抛出错误
     raise FileNotFoundError(
         f"❌ 找不到本地 Embedding 模型！请将模型放到 {base_dir / 'model'} 下，"
         f"或设置环境变量 EMBEDDING_MODEL_PATH"
@@ -50,9 +69,22 @@ def _get_local_model_path() -> str:
 
 def load_vector_store() -> Optional[FAISS]:
     """
-    加载预构建的 FAISS 向量库。
-    如果索引文件不存在，则返回 None（你也可以在这里调用构建函数）
+    加载预构建的 FAISS 向量库（已加固安全校验）。
+    需要先通过环境变量 ALLOW_FAISS_DANGEROUS_DESERIALIZATION 授权。
+    如果索引文件不存在，则返回 None。
     """
+    # 安全锁：必须显式设置环境变量
+    if os.getenv("ALLOW_FAISS_DANGEROUS_DESERIALIZATION") != "1":
+        logger.critical(
+            "🔒 安全限制：FAISS 加载使用了危险的 Pickle 反序列化。\n"
+            "   如果您已确认索引文件完全受信，请在环境变量中设置：\n"
+            "   export ALLOW_FAISS_DANGEROUS_DESERIALIZATION=1\n"
+            "   并重启应用。"
+        )
+        raise RuntimeError(
+            "FAISS 加载未授权！请设置 ALLOW_FAISS_DANGEROUS_DESERIALIZATION=1"
+        )
+
     try:
         local_model_path = _get_local_model_path()
         logger.info(f"使用本地模型：{local_model_path}")
@@ -63,6 +95,11 @@ def load_vector_store() -> Optional[FAISS]:
             encode_kwargs={'normalize_embeddings': True},
         )
 
+        # 检查索引目录是否存在
+        if not os.path.exists(FAISS_INDEX_DIR) or not os.path.isdir(FAISS_INDEX_DIR):
+            logger.error(f"❌ FAISS 索引目录不存在: {FAISS_INDEX_DIR}")
+            return None
+
         vector_store = FAISS.load_local(
             FAISS_INDEX_DIR,
             embeddings,
@@ -70,9 +107,39 @@ def load_vector_store() -> Optional[FAISS]:
         )
         logger.info(f"✅ 向量库加载成功，共 {vector_store.index.ntotal} 条记录")
         return vector_store
+    except FileNotFoundError as e:
+        logger.error(f"❌ 模型或索引文件缺失: {e}")
+        return None
     except Exception as e:
         logger.error(f"❌ 向量库加载失败: {e}")
         return None
+
+
+# ✅ 统一获取向量库的接口（线程安全，双重检查锁定）
+def get_vector_store() -> Optional[FAISS]:
+    """
+    获取向量库实例（线程安全）。
+    1. 优先返回已缓存的有效实例。
+    2. 若无缓存，加锁后再次检查，避免多线程重复初始化。
+    3. 调用 load_vector_store() 加载，并将结果缓存。
+    """
+    global _vector_store
+
+    # 第一次检查（无锁，用于快速路径）
+    if _vector_store is not None:
+        return _vector_store
+
+    # 进入临界区
+    with _vector_store_lock:
+        # 第二次检查（持有锁，确保只初始化一次）
+        if _vector_store is None:
+            logger.info("⚡ 全局向量库为空，执行线程安全的懒加载...")
+            _vector_store = load_vector_store()
+            if _vector_store is not None:
+                logger.info("✅ 向量库懒加载成功")
+            else:
+                logger.warning("⚠️ 向量库懒加载失败，后续请求将返回 None")
+        return _vector_store
 
 
 # ✅ Worker 进程启动时的预加载钩子
@@ -80,27 +147,12 @@ def load_vector_store() -> Optional[FAISS]:
 def init_worker_vector_store(**kwargs):
     """
     每个 Celery Worker 子进程启动时自动调用。
-    将向量库加载到全局变量，后续所有任务直接复用。
+    通过线程安全的方式将向量库加载到全局缓存中，后续所有任务直接复用。
     """
-    global _vector_store
+    # Worker 进程初始化时通常只有单线程，但为安全仍通过 get_vector_store 加锁加载
     logger.info("🔄 Worker 初始化：开始预加载向量库...")
-    _vector_store = load_vector_store()
-    if _vector_store is not None:
+    store = get_vector_store()
+    if store is not None:
         logger.info("✅ Worker 向量库预加载完成")
     else:
-        logger.warning("⚠️ Worker 向量库预加载失败，后续任务将尝试懒加载")
-
-
-# ✅ 统一获取向量库的接口
-def get_vector_store() -> Optional[FAISS]:
-    """
-    获取向量库实例。
-    - 若在 Celery Worker 中，优先返回预加载的全局变量；
-    - 若全局变量为空（非 Worker 环境或预加载失败），则实时懒加载。
-    """
-    global _vector_store
-    if _vector_store is not None:
-        return _vector_store
-    else:
-        logger.info("⚡ 全局向量库为空，执行懒加载...")
-        return load_vector_store()
+        logger.warning("⚠️ Worker 向量库预加载失败，后续任务将返回 None")

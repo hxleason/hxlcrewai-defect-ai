@@ -1,70 +1,79 @@
 """
 app/crews.py
-特种设备缺陷评估 Crew 流水线（混合稳健解析版）
+特种设备缺陷评估 Crew 流水线（统一配置版 v2.0）
 兼容 crewai >= 0.30，使用 @tool 装饰器
 
 特性：
-- 自动加载 .env 环境变量
-- 使用 LLM 单例避免重复初始化
+- 所有 LLM 配置统一由 app.core.config.settings 提供，杜绝分散读取
+- 使用 LLM 单例避免重复初始化（线程安全）
 - 所有任务描述使用三引号模板，杜绝字符串拼接语法错误
 - extract_json_robust 多级修复确保 JSON 解析永不崩溃
 - 完整 FMEA 评估 + 法规审核流水线
+- 统一的自定义异常体系，精确定位错误类型
 """
 
-import json
 import re
 import logging
 from typing import Optional, Dict, Any
-
-from dotenv import load_dotenv
-load_dotenv(override=True)          # 强制使用最新的 .env 变量
+from functools import lru_cache
 
 from crewai import Agent, Task, Crew, Process, LLM
 from crewai.tools import tool
 from json_repair import repair_json
 
-# 你的内部工具模块（请确保路径正确）
+# ── 统一配置中心 ──
+from app.core.config import settings
+
+# 内部工具模块
 from app.core.tools import risk_tool, diagnosis_tool
 from app.core.vector_store import search_standards
+
+# 自定义异常体系
+from app.core.exceptions import (
+    FMEABaseException,
+    LLMTimeoutError,
+    LLMAPIError,
+    ParsingError,
+)
 
 logger = logging.getLogger("defect_fmea.crews")
 
 # ================================================================
-# LLM 单例（按需初始化，可复用）
+# LLM 单例（线程安全，使用 lru_cache 保证只初始化一次）
 # ================================================================
-_llm_instance: Optional[LLM] = None
 
-
+@lru_cache(maxsize=1)
 def get_llm() -> LLM:
-    """创建或获取共享的 LLM 实例，配置来源于 .env 文件"""
-    global _llm_instance
-    if _llm_instance is None:
-        import os
+    """创建或获取共享的 LLM 实例，配置由 app.core.config.settings 统一提供
 
-        api_key = os.getenv("OPENAI_API_KEY")
-        base_url = os.getenv("OPENAI_BASE_URL")
-        model = os.getenv("LLM_MODEL_NAME", "gpt-4o-mini")
-        temperature = float(os.getenv("LLM_TEMPERATURE", "0.3"))
-        max_tokens = int(os.getenv("LLM_MAX_TOKENS", "4096"))
+    Raises:
+        LLMAPIError: 当 API Key 未设置时抛出
+    """
+    model = settings.LLM_MODEL
+    base_url = settings.LLM_BASE_URL
+    api_key = settings.LLM_API_KEY
+    temperature = settings.LLM_TEMPERATURE
+    max_tokens = settings.LLM_MAX_TOKENS
 
-        if not api_key:
-            raise EnvironmentError(
-                "❌ OPENAI_API_KEY 未设置！请在 .env 文件中配置。"
-            )
-
-        logger.info(
-            "正在初始化 LLM | model=%s | base_url=%s | temperature=%s | max_tokens=%s",
-            model, base_url, temperature, max_tokens,
+    if not api_key:
+        raise LLMAPIError(
+            "LLM_API_KEY 未设置，请在 .env 文件中配置有效的 API Key "
+            "（推荐使用标准变量名 LLM_API_KEY）"
         )
-        _llm_instance = LLM(
-            model=model,
-            base_url=base_url,
-            api_key=api_key,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-        logger.info("✅ LLM 实例化成功")
-    return _llm_instance
+
+    logger.info(
+        "正在初始化 LLM | model=%s | base_url=%s | temperature=%s | max_tokens=%s",
+        model, base_url, temperature, max_tokens,
+    )
+    instance = LLM(
+        model=model,
+        base_url=base_url,
+        api_key=api_key,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+    logger.info("✅ LLM 实例化成功")
+    return instance
 
 
 # ================================================================
@@ -80,8 +89,10 @@ def extract_json_robust(raw_text: str) -> Dict[str, Any]:
       3. 清理 Markdown 标记后 json.loads
       4. json_repair 智能修复
       5. 正则捕获最大 JSON 块 + json_repair
-    终末兜底返回包含原始文本的 dict
+    终末兜底返回包含原始文本的 dict (含 parse_error 键)
     """
+    import json  # 局部导入避免覆盖系统 json
+
     # 0. 已是字典
     if isinstance(raw_text, dict):
         return raw_text
@@ -161,20 +172,41 @@ search_regulation_tool = regulation_search_function  # 别名方便引用
 
 
 # ================================================================
+# 内部异常转换辅助函数
+# ================================================================
+
+def _classify_llm_exception(e: Exception) -> FMEABaseException:
+    """根据异常内容判断是否为 LLM 超时或 API 错误，并返回对应的自定义异常"""
+    msg = str(e).lower()
+    if "timeout" in msg or "timed out" in msg or "connection" in msg:
+        return LLMTimeoutError(f"LLM 调用超时: {e}")
+    if "api key" in msg or "authentication" in msg or "unauthorized" in msg:
+        return LLMAPIError(f"LLM 认证失败: {e}")
+    if "rate limit" in msg or "quota" in msg:
+        return LLMAPIError(f"LLM 额度或频率限制: {e}")
+    return FMEABaseException(f"评估流程异常: {e}", error_code="EVALUATION_FAILED", status_code=500)
+
+
+# ================================================================
 # 流水线 1：缺陷提取（返回原始字符串，供简单调用）
 # ================================================================
 
 def create_analysis_crew(report_text: str) -> str:
-    """快速提取缺陷 JSON，返回 LLM 的原始输出字符串"""
-    agent = Agent(
-        role="特种设备缺陷解析专家",
-        goal="提取缺陷输出纯JSON，不包含任何Markdown",
-        backstory="只输出事实，不添加解释。",
-        llm=get_llm(),
-        verbose=True,
-        allow_delegation=False,
-    )
-    task_desc = f'''根据报告文本提取所有缺陷，严格输出以下 JSON 格式，不要任何额外文字：
+    """快速提取缺陷 JSON，返回 LLM 的原始输出字符串
+    
+    Raises:
+        FMEABaseException: 子类异常，根据具体错误类型抛出
+    """
+    try:
+        agent = Agent(
+            role="特种设备缺陷解析专家",
+            goal="提取缺陷输出纯JSON，不包含任何Markdown",
+            backstory="只输出事实，不添加解释。",
+            llm=get_llm(),
+            verbose=True,
+            allow_delegation=False,
+        )
+        task_desc = f"""根据报告文本提取所有缺陷，严格输出以下 JSON 格式，不要任何额外文字：
 {{
   "defects": [
     {{
@@ -190,17 +222,23 @@ def create_analysis_crew(report_text: str) -> str:
   ]
 }}
 ⚠️ 如果报告中没有明确的设计壁厚（mm），请将 wall_thickness 设为 null，严禁猜测数值。
-报告文本：{report_text}'''
+报告文本：{report_text}"""
 
-    task = Task(
-        description=task_desc,
-        expected_output="纯JSON字符串",
-        agent=agent,
-    )
-    crew = Crew(agents=[agent], tasks=[task], process=Process.sequential, verbose=True)
-    result = crew.kickoff()
-    raw = result.raw if hasattr(result, "raw") else str(result)
-    return raw
+        task = Task(
+            description=task_desc,
+            expected_output="纯JSON字符串",
+            agent=agent,
+        )
+        crew = Crew(agents=[agent], tasks=[task], process=Process.sequential, verbose=True)
+        result = crew.kickoff()
+        raw = result.raw if hasattr(result, "raw") else str(result)
+        return raw
+
+    except FMEABaseException:
+        raise
+    except Exception as e:
+        logger.error(f"缺陷提取任务失败: {e}")
+        raise _classify_llm_exception(e) from e
 
 
 # ================================================================
@@ -208,7 +246,14 @@ def create_analysis_crew(report_text: str) -> str:
 # ================================================================
 
 def run_fmea_evaluation(report_text: str) -> dict:
-    """执行 FMEA 评估（提取 + 风险评级 + 原因分析），返回可靠字典"""
+    """执行 FMEA 评估（提取 + 风险评级 + 原因分析），返回可靠字典
+
+    Raises:
+        ParsingError: 当 LLM 输出无法解析为 JSON 时
+        LLMTimeoutError: 当 LLM 请求超时时
+        LLMAPIError: 当 LLM 接口调用失败时
+        FMEABaseException: 其他评估流程异常
+    """
     extractor = Agent(
         role="特种设备缺陷解析专家",
         goal="提取缺陷为JSON",
@@ -227,7 +272,7 @@ def run_fmea_evaluation(report_text: str) -> dict:
         allow_delegation=False,
     )
 
-    parse_desc = f'''提取所有缺陷，输出纯 JSON：
+    parse_desc = f"""提取所有缺陷，输出纯 JSON：
 {{
   "defects": [
     {{
@@ -243,7 +288,7 @@ def run_fmea_evaluation(report_text: str) -> dict:
   ]
 }}
 ⚠️ 如果报告中没有壁厚（mm），请将 wall_thickness 设为 null，不要虚构数字。
-报告文本：{report_text}'''
+报告文本：{report_text}"""
 
     parse_task = Task(
         description=parse_desc,
@@ -251,7 +296,7 @@ def run_fmea_evaluation(report_text: str) -> dict:
         agent=extractor,
     )
 
-    eval_desc = '''对每条缺陷分别执行：
+    eval_desc = """对每条缺陷分别执行：
 1. 调用 risk_assessment_tool(defect_type=类型, length_mm=长度, depth_mm=深度, wall_thickness=壁厚, quantity=数量)
    【禁止使用任何我未列出的参数名】
 2. 调用 diagnosis_tool(defect_type=类型) 得到原因列表。
@@ -278,7 +323,7 @@ def run_fmea_evaluation(report_text: str) -> dict:
     }
   ]
 }
-只输出纯 JSON 文本，不要 Markdown 代码块。'''
+只输出纯 JSON 文本，不要 Markdown 代码块。"""
 
     eval_task = Task(
         description=eval_desc,
@@ -293,13 +338,22 @@ def run_fmea_evaluation(report_text: str) -> dict:
         process=Process.sequential,
         verbose=True,
     )
-    result = crew.kickoff()
-    raw = result.raw if hasattr(result, "raw") else str(result)
 
-    # 调试用：打印 LLM 原始回复的前 500 个字符
+    try:
+        result = crew.kickoff()
+    except Exception as e:
+        logger.error(f"FMEA Crew 执行失败: {e}")
+        raise _classify_llm_exception(e) from e
+
+    raw = result.raw if hasattr(result, "raw") else str(result)
     logger.info("LLM 原始输出 (FMEA):\n%s", raw[:500])
 
-    return extract_json_robust(raw)
+    parsed = extract_json_robust(raw)
+    if "parse_error" in parsed:
+        raise ParsingError(
+            f"LLM 输出无法解析为 JSON。原始输出片段: {raw[:300]}"
+        )
+    return parsed
 
 
 # ================================================================
@@ -307,7 +361,14 @@ def run_fmea_evaluation(report_text: str) -> dict:
 # ================================================================
 
 def run_full_fmea_evaluation(report_text: str) -> dict:
-    """执行完整 FMEA 评估 + 法规审核，返回包含法律依据的增强报告字典"""
+    """执行完整 FMEA 评估 + 法规审核，返回包含法律依据的增强报告字典
+
+    Raises:
+        ParsingError: 当 LLM 输出无法解析为 JSON 时
+        LLMTimeoutError: 当 LLM 请求超时时
+        LLMAPIError: 当 LLM 接口调用失败时
+        FMEABaseException: 其他评估流程异常
+    """
     extractor = Agent(
         role="特种设备缺陷解析专家",
         goal="提取缺陷为JSON",
@@ -335,7 +396,7 @@ def run_full_fmea_evaluation(report_text: str) -> dict:
         allow_delegation=False,
     )
 
-    parse_desc = f'''提取所有缺陷，输出纯 JSON：
+    parse_desc = f"""提取所有缺陷，输出纯 JSON：
 {{
   "defects": [
     {{
@@ -351,7 +412,7 @@ def run_full_fmea_evaluation(report_text: str) -> dict:
   ]
 }}
 ⚠️ 如果报告中没有壁厚（mm），请将 wall_thickness 设为 null，严禁虚构。
-报告文本：{report_text}'''
+报告文本：{report_text}"""
 
     parse_task = Task(
         description=parse_desc,
@@ -359,7 +420,7 @@ def run_full_fmea_evaluation(report_text: str) -> dict:
         agent=extractor,
     )
 
-    eval_desc = '''对每条缺陷分别执行：
+    eval_desc = """对每条缺陷分别执行：
 1. 调用 risk_assessment_tool(defect_type=类型, length_mm=长度, depth_mm=深度, wall_thickness=壁厚, quantity=数量)
    【禁止使用任何我未列出的参数名】
 2. 调用 diagnosis_tool(defect_type=类型)
@@ -386,7 +447,7 @@ def run_full_fmea_evaluation(report_text: str) -> dict:
     }
   ]
 }
-只输出纯 JSON，不要任何 Markdown 标记。'''
+只输出纯 JSON，不要任何 Markdown 标记。"""
 
     eval_task = Task(
         description=eval_desc,
@@ -395,14 +456,14 @@ def run_full_fmea_evaluation(report_text: str) -> dict:
         context=[parse_task],
     )
 
-    audit_desc = '''对上一步输出的每条缺陷，执行：
+    audit_desc = """对上一步输出的每条缺陷，执行：
 1. 读取 type 和 level 值。
 2. 构造查询字符串，例如 f'{type} 等级{level} 处理措施'。
 3. 调用 search_regulation_tool(query=构造的字符串)。
    【只传 query 一个参数】
 4. 将返回值中的 law_references, mandatory_measures, inspection_advice
    原样追加到每条缺陷对象中。
-最终输出完整增强报告 JSON，不得有任何额外说明或 Markdown。'''
+最终输出完整增强报告 JSON，不得有任何额外说明或 Markdown。"""
 
     audit_task = Task(
         description=audit_desc,
@@ -417,9 +478,19 @@ def run_full_fmea_evaluation(report_text: str) -> dict:
         process=Process.sequential,
         verbose=True,
     )
-    result = crew.kickoff()
-    raw = result.raw if hasattr(result, "raw") else str(result)
 
+    try:
+        result = crew.kickoff()
+    except Exception as e:
+        logger.error(f"完整评估 Crew 执行失败: {e}")
+        raise _classify_llm_exception(e) from e
+
+    raw = result.raw if hasattr(result, "raw") else str(result)
     logger.info("LLM 原始输出 (完整评估):\n%s", raw[:500])
 
-    return extract_json_robust(raw)
+    parsed = extract_json_robust(raw)
+    if "parse_error" in parsed:
+        raise ParsingError(
+            f"完整评估 LLM 输出无法解析为 JSON。原始输出片段: {raw[:300]}"
+        )
+    return parsed

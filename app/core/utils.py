@@ -1,13 +1,17 @@
 """
-app/core/utils.py - FMEA 核心工具函数（环境变量驱动版）
+app/core/utils.py – FMEA 核心工具函数（纯规则引擎驱动 v2.0）
 
 提供：
-    - fmea_calculator : 基于规则引擎的缺陷风险评估
-    - diagnosis_reasons: 缺陷成因反查
-所有可调参数均支持通过环境变量覆盖，无需任何额外配置文件。
+    - fmea_calculator: 基于规则引擎的缺陷风险评估（无默认壁厚回退）
+    - diagnosis_reasons: 缺陷成因反查（扩展映射表）
+
+设计原则：
+    - 壁厚缺失时拒绝降级评估，强制返回“无法评定”并记录警告。
+    - 长度/深度缺失时不强制归零，交由规则引擎根据内置策略处理
+      （规则引擎会跳过依赖缺失数值的升级规则，防止错误低估风险）。
+    - 所有输出字段完整，保证下游流水线不因缺失 key 而崩溃。
 """
 
-import os
 import logging
 from typing import Optional, List, Dict, Any
 
@@ -15,90 +19,89 @@ from app.core.rule_engine import rule_engine
 
 logger = logging.getLogger("defect_fmea.utils")
 
-# ---------------------------------------------------------------------------
-# 全局可调参数（环境变量覆盖，模块加载时确定）
-# ---------------------------------------------------------------------------
-DEFAULT_WALL_THICKNESS: float = float(
-    os.getenv("DEFAULT_WALL_THICKNESS", 2.0)
-)  # 默认壁厚（mm），若报告未提供则使用此值
-
-# ---------------------------------------------------------------------------
-# 公共函数
-# ---------------------------------------------------------------------------
 
 def fmea_calculator(
     defect_type: str = "",
-    length_mm: Optional[float] = 0.0,
-    depth_mm: Optional[float] = 0.0,
-    wall_thickness: Optional[float] = None,          # None 时自动使用 DEFAULT_WALL_THICKNESS
+    length_mm: Optional[float] = None,
+    depth_mm: Optional[float] = None,
+    wall_thickness: Optional[float] = None,
     quantity: int = 1,
     **kwargs,
 ) -> Dict[str, Any]:
     """
-    计算给定缺陷的 FMEA 风险值（严重度 S / 发生度 O / 探测度 D / RPN）。
+    计算给定缺陷的 FMEA 风险值（S / O / D / RPN）。
 
     参数
     ----
     defect_type : str
         缺陷类型（如 "裂纹", "气孔", "夹杂" 等）。
-    length_mm : float, optional
-        缺陷长度（mm），0 表示无或未测量。
-    depth_mm : float, optional
-        缺陷深度（mm），0 表示无或未测量。
-    wall_thickness : float, optional
-        构件设计壁厚（mm）。若为 None 或 <=0，
-        且环境变量未提供有效默认值，则返回无法评定。
+    length_mm : float or None
+        缺陷长度（mm），None 表示未测量。将原样传给规则引擎。
+    depth_mm : float or None
+        缺陷深度（mm），None 表示未测量。
+    wall_thickness : float or None
+        构件设计壁厚（mm）。**必须由上游提供有效值，否则评估终止并返回错误**。
     quantity : int
         同类缺陷数量（默认 1）。
 
     返回
     ----
     dict
-        包含 severity / occurrence / detection / rpn / risk_level /
-        level / standard_ref / triggered_rules 等字段的评估结果。
-        若输入无效，返回包含 "error" 键的字典。
+        评估结果，即使失败也返回统一结构的字典（error 字段为 True 时表示无效）。
     """
-    # ---- 1. 输入规范化 ----
-    if length_mm is None:
-        length_mm = 0.0
-    if depth_mm is None:
-        depth_mm = 0.0
-
-    # 若未显式提供壁厚，回退到环境变量默认值
-    if wall_thickness is None:
-        wall_thickness = DEFAULT_WALL_THICKNESS
-
-    # 最终有效性检查
+    # ---- 1. 壁厚有效性检查（强制要求） ----
     if wall_thickness is None or wall_thickness <= 0:
         logger.warning(
-            "无法进行 FMEA 评估：缺少有效壁厚参数。"
-            "请通过环境变量 DEFAULT_WALL_THICKNESS 设置，或在报告中明确设计壁厚。"
+            "FMEA 评估终止：缺少有效壁厚（wall_thickness=%s）。"
+            "请确保报告已提供设计壁厚，或检查提取流程。",
+            wall_thickness,
         )
         return {
-            "error": "缺少有效壁厚参数，请在报告中明确设计壁厚(mm)后重新评估。",
+            "error": True,
+            "message": "缺少有效壁厚，无法计算风险等级。请提供设计壁厚(mm)后重试。",
             "severity": 0,
             "occurrence": 0,
             "detection": 0,
             "rpn": 0,
             "risk_level": "无法评定",
             "level": 0,
-            "standard_ref": "N/A",
+            "standard_ref": "",
             "triggered_rules": [],
         }
 
-    # ---- 2. 构建缺陷特征字典 ----
+    # ---- 2. 构建标准缺陷字典（不强制填充长度/深度默认值） ----
     defect = {
         "type": defect_type,
-        "length_mm": length_mm,
-        "depth_mm": depth_mm,
-        "wall_thickness": wall_thickness,
-        "quantity": quantity,
+        "length_mm": length_mm if length_mm is not None else None,
+        "depth_mm": depth_mm if depth_mm is not None else None,
+        "wall_thickness": float(wall_thickness),   # 已确保有效
+        "quantity": int(quantity) if quantity >= 1 else 1,
     }
 
     # ---- 3. 调用规则引擎 ----
-    logger.debug(f"调用规则引擎评估缺陷: {defect}")
-    result = rule_engine.evaluate(defect)
-    logger.info(f"FMEA 评估完成: RPN={result.get('rpn')}, 风险等级={result.get('risk_level')}")
+    logger.debug("调用规则引擎评估缺陷: %s", defect)
+    try:
+        result = rule_engine.evaluate(defect)
+    except Exception as e:
+        logger.error("规则引擎评估异常: %s", e, exc_info=True)
+        # 发生严重错误时返回安全兜底
+        return {
+            "error": True,
+            "message": f"规则引擎内部错误: {e}",
+            "severity": 0,
+            "occurrence": 0,
+            "detection": 0,
+            "rpn": 0,
+            "risk_level": "系统错误",
+            "level": 0,
+            "standard_ref": "",
+            "triggered_rules": [],
+        }
+
+    logger.info(
+        "FMEA 评估完成: type=%s, RPN=%s, risk_level=%s",
+        defect_type, result.get("rpn"), result.get("risk_level"),
+    )
     return result
 
 
@@ -109,44 +112,114 @@ def diagnosis_reasons(defect_type: str = "", **kwargs) -> List[str]:
     参数
     ----
     defect_type : str
-        缺陷类型字符串（支持模糊匹配，如 "表面裂纹" 会匹配 "裂纹"）。
+        缺陷类型字符串（支持包含关系，如 "表面裂纹" 会匹配 "裂纹"）。
 
     返回
     ----
     List[str]
-        可能的原因列表，若无匹配则返回 ["未知原因"]。
+        可能的原因列表；若无匹配则返回 ["未知原因（建议人工分析）"]。
     """
-    # 成因映射表（可按需扩展或迁移至外部知识库）
+    # ---- 扩展成因映射表（可按需从外部知识库加载） ----
     reason_mapping: Dict[str, List[str]] = {
-        "裂纹": ["焊接残余应力", "材料淬硬倾向", "疲劳载荷", "氢致裂纹"],
-        "表面裂纹": ["焊接残余应力", "材料淬硬倾向", "疲劳载荷", "氢致裂纹"],
-        "点蚀": ["介质腐蚀性", "保护层破损", "长期潮湿环境"],
-        "气孔": ["焊接保护不良", "焊材潮湿"],
-        "夹杂": ["焊前清理不彻底", "焊渣未清除"],
-        # 可按需补充更多缺陷类型
+        "裂纹": [
+            "焊接残余应力",
+            "材料淬硬倾向",
+            "疲劳载荷",
+            "氢致裂纹",
+            "应力腐蚀开裂",
+        ],
+        "表面裂纹": [
+            "焊接残余应力",
+            "材料淬硬倾向",
+            "疲劳载荷",
+            "氢致裂纹",
+            "机械划伤",
+        ],
+        "内部裂纹": [
+            "铸造缺陷",
+            "锻造折叠",
+            "热处理不当",
+            "氢致裂纹",
+        ],
+        "点蚀": [
+            "介质腐蚀性（如含Cl⁻）",
+            "保护涂层破损",
+            "长期潮湿环境",
+            "异种金属接触腐蚀",
+        ],
+        "腐蚀": [
+            "介质腐蚀性",
+            "保护层失效",
+            "酸性气体环境",
+            "微生物腐蚀",
+        ],
+        "气孔": [
+            "焊接保护气体不足",
+            "焊材受潮",
+            "坡口清理不净",
+            "凝固收缩",
+        ],
+        "夹杂": [
+            "焊前清理不彻底",
+            "焊渣未清除",
+            "原材料夹杂物",
+            "冶炼缺陷",
+        ],
+        "未熔合": [
+            "焊接电流过小",
+            "焊接速度过快",
+            "坡口设计不当",
+            "层间清理不良",
+        ],
+        "变形": [
+            "焊接热输入过大",
+            "拘束应力过大",
+            "装配不当",
+            "材料热膨胀系数高",
+        ],
+        "磨损": [
+            "长期摩擦工况",
+            "润滑失效",
+            "磨粒侵入",
+            "材料硬度不足",
+        ],
     }
 
-    for key, reasons in reason_mapping.items():
+    # 按关键字长度降序匹配，避免短关键字提前命中
+    for key in sorted(reason_mapping.keys(), key=len, reverse=True):
         if key in defect_type:
-            logger.debug(f"缺陷类型 '{defect_type}' 匹配成因键 '{key}' → {reasons}")
-            return reasons
+            logger.debug(f"缺陷类型 '{defect_type}' 匹配成因 '{key}' → {reason_mapping[key]}")
+            return reason_mapping[key]
 
     logger.debug(f"未找到缺陷类型 '{defect_type}' 的已知成因，返回默认值")
-    return ["未知原因"]
+    return ["未知原因（建议人工分析）"]
 
 
 # ---------------------------------------------------------------------------
-# 直接运行测试（可选）
+# 直接运行测试
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    print("=== FMEA 工具测试 ===")
-    test_result = fmea_calculator(
+
+    print("=== 正常评估 ===")
+    res = fmea_calculator(
         defect_type="裂纹",
         length_mm=5.0,
         depth_mm=1.2,
         wall_thickness=8.0,
         quantity=2,
     )
-    print(test_result)
-    print("\n成因测试:", diagnosis_reasons("表面裂纹"))
+    print(res)
+
+    print("\n=== 壁厚缺失评估（应返回错误） ===")
+    res_err = fmea_calculator(
+        defect_type="点蚀",
+        length_mm=3.0,
+        depth_mm=None,
+        wall_thickness=None,
+    )
+    print(res_err)
+
+    print("\n=== 成因测试 ===")
+    print("表面裂纹:", diagnosis_reasons("表面裂纹"))
+    print("未知类型:", diagnosis_reasons("神秘缺陷"))

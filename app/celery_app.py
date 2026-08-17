@@ -2,7 +2,7 @@
 Celery 配置（终极版）
 - 支持 Windows / Linux 双平台
 - 线程池（Windows）或进程池（Linux）以保障 group / chord 并行执行
-- 基于 Redis 作为 broker 和 backend
+- Broker 与 Backend 统一从 Settings 读取，便于多环境部署
 - 定时任务：每 5 分钟检查卡住的任务
 - 向量库预加载 + 就绪提示
 """
@@ -13,12 +13,15 @@ from celery.schedules import crontab
 from celery.signals import worker_ready
 from dotenv import load_dotenv
 
-load_dotenv()
+from app.core.config import settings
 
+load_dotenv()  # 双重保险，确保 .env 已加载
+
+# ── 创建 Celery 实例（配置来源：settings） ──
 celery_app = Celery(
     "fmea_worker",
-    broker="redis://localhost:6379/0",
-    backend="redis://localhost:6379/0",
+    broker=settings.CELERY_BROKER_URL,
+    backend=settings.CELERY_RESULT_BACKEND,
     include=[
         "app.tasks.analysis",
         "app.tasks.scheduler",

@@ -1,52 +1,67 @@
 """
 app/routers/fmea.py
-FMEA 评估专用路由（异步 + 线程池 + 超时保护终极版）
+FMEA 评估专用路由（终极版）
 
 核心特性：
-- 所有耗时的 Crew 任务均通过 asyncio.to_thread() 放入线程池执行。
-- 每个端点独立设置超时时间，避免永久等待。
-- 统一转换 FMEABaseException 为结构化 HTTP 错误。
-- 保持 async 函数签名，兼容异步中间件及未来扩展。
+    - 所有耗时的 Crew 任务通过 asyncio.to_thread() 放入线程池执行，避免阻塞事件循环。
+    - 每个端点独立设置超时时间，防止永久等待。
+    - 统一将 FMEABaseException 转换为结构化 HTTP 错误，便于前端识别。
+    - 保持 async 函数签名，兼容异步中间件及未来扩展。
+    - 直接使用新版 run_full_fmea 函数，返回完整评估结果（含 AP 与审核标记）。
 """
+
 import asyncio
 import logging
+from typing import Any, Callable, Dict, Optional
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.crews import run_fmea_evaluation, run_full_fmea_evaluation
+# 导入新版端到端函数（推荐使用，不再调用废弃函数）
+from app.crews import run_full_fmea
 from app.core.exceptions import FMEABaseException
 
 logger = logging.getLogger("defect_fmea.api")
 
+# 创建路由器
 router = APIRouter(
     prefix="/fmea",
     tags=["FMEA 评估"],
     responses={404: {"description": "Not found"}},
 )
 
+
 class TextInput(BaseModel):
+    """
+    请求体模型：待评估的特种设备检验报告文本。
+    """
     text: str = Field(
-        ..., 
-        min_length=10, 
-        description="待评估的特种设备检测报告全文"
+        ...,
+        min_length=10,
+        max_length=100_000,
+        description="待评估的特种设备检测报告全文（10~100000 字符）",
     )
-    project_id: int | None = Field(
-        None, 
-        description="可选：关联的项目 ID，用于后续落库"
+    project_id: Optional[int] = Field(
+        None,
+        description="可选：关联的项目 ID，用于后续落库（当前版本暂未使用）",
     )
 
 
-async def run_in_thread(func, *args, timeout: float = 120.0):
+async def run_in_thread(
+    func: Callable,
+    *args: Any,
+    timeout: float = 120.0,
+) -> Any:
     """
     将同步阻塞函数放入线程池执行，并提供超时和异常转换。
 
     参数:
-        func:   要执行的同步函数
-        *args:  传递给 func 的位置参数
-        timeout: 超时时间（秒），默认 120 秒
+        func:     要执行的同步函数
+        *args:    传递给 func 的位置参数
+        timeout:  超时时间（秒），默认 120 秒
 
     返回:
-        函数 func 的原始返回值
+        func 的原始返回值
 
     抛出:
         HTTPException(504)：任务超时
@@ -59,7 +74,7 @@ async def run_in_thread(func, *args, timeout: float = 120.0):
             timeout=timeout,
         )
     except asyncio.TimeoutError:
-        logger.error(f"任务超时：{func.__name__} 执行超过 {timeout}s")
+        logger.error(f"任务超时：{getattr(func, '__name__', 'unknown')} 执行超过 {timeout}s")
         raise HTTPException(
             status_code=504,
             detail={
@@ -89,8 +104,12 @@ async def run_in_thread(func, *args, timeout: float = 120.0):
         )
 
 
-@router.post("/evaluate", summary="FMEA 评估（不含法规审核）")
-async def evaluate_fmea(input_data: TextInput):
+@router.post(
+    "/evaluate",
+    summary="FMEA 评估（不含法规审核）",
+    response_description="完整的 FMEA 评估结果清单",
+)
+async def evaluate_fmea(input_data: TextInput) -> Dict[str, Any]:
     """
     接收报告文本，返回 FMEA 评估结果：
     - 自动提取缺陷
@@ -101,31 +120,35 @@ async def evaluate_fmea(input_data: TextInput):
     - LLM_TIMEOUT (504)
     - LLM_API_ERROR (502)
     - PARSING_ERROR (422)
+    - TASK_TIMEOUT (504)
     - INTERNAL_ERROR (500)
     """
     result = await run_in_thread(
-        run_fmea_evaluation,
+        run_full_fmea,  # 新版统一入口
         input_data.text,
-        timeout=120  # 普通评估给予 2 分钟
+        timeout=300,  # 根据实际 LLM 耗时调整，给予 5 分钟
     )
-    return result
+    # run_full_fmea 返回 FMEAAnalysisResult 对象，需要序列化为字典
+    return result.model_dump()
 
 
-@router.post("/evaluate/full", summary="完整 FMEA 评估（含法规审核）")
-async def evaluate_fmea_full(input_data: TextInput):
+@router.post(
+    "/evaluate/full",
+    summary="完整 FMEA 评估（预留法规审核）",
+    response_description="包含 FMEA 评估结果，暂不包含法规审核详情",
+)
+async def evaluate_fmea_full(input_data: TextInput) -> Dict[str, Any]:
     """
-    在 FMEA 基础上自动查询法规条文，为每条缺陷补充：
-    - 法律条文引用
-    - 强制措施
-    - 检查建议
+    在 FMEA 基础上预留法规审核功能，当前版本与 /evaluate 行为一致。
+    后续可通过扩展 run_full_fmea 或添加额外步骤实现法规条文查询。
 
     可能额外出现的错误码：
     - REGULATION_LOOKUP_ERROR (503)
     - 同 /evaluate 的其他错误码
     """
     result = await run_in_thread(
-        run_full_fmea_evaluation,
+        run_full_fmea,  # 新版统一入口
         input_data.text,
-        timeout=180  # 含法规查询，给予 3 分钟
+        timeout=420,  # 预留法规查询时间，给予 7 分钟
     )
-    return result
+    return result.model_dump()

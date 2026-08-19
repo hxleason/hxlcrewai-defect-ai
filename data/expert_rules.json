@@ -1,0 +1,1060 @@
+{
+  "rules": [
+    {
+      "rule_id": "A-001",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 充装介质为无水氨/氯/二氧化硫等腐蚀性介质 AND 罐体材料为碳钢/低合金钢",
+      "then_action": "S上调2级，O上调1级，D不变",
+      "action_explanation": "腐蚀性介质对碳钢有均匀腐蚀作用，按HG20660介质毒性分级（氯为极度危害，无水氨为中度危害），严重度应上调",
+      "remark": "来源：TSG R0005-2011 表3-4"
+    },
+    {
+      "rule_id": "A-002",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 充装腐蚀性介质（无水氨/氯/二氧化硫）AND 罐体设计使用年限已过15年",
+      "then_action": "O上调2级，S上调1级",
+      "action_explanation": "长期均匀腐蚀导致壁厚持续减薄，设计年限到达后腐蚀裕量可能耗尽，发生概率随年限增加而升高",
+      "remark": "来源：TSG R0005-2011 表3-4注3-7"
+    },
+    {
+      "rule_id": "A-003",
+      "rule_class": "综合预防",
+      "if_condition": "IF 装运冷冻液化气体或液态二氧化碳 AND 需装设卸液泵",
+      "then_action": "S上调1级，O上调1级，D上调1级",
+      "action_explanation": "卸液泵增加泄漏风险点，但卫星定位系统和远程监控可降低部分风险，探测难度因设备复杂性增加",
+      "remark": "来源：TSG R0005-2011 第1号修改单 3.11.10"
+    },
+    {
+      "rule_id": "A-004",
+      "rule_class": "综合预防",
+      "if_condition": "IF 除应急救援情况外（移动式压力容器之间相互装卸/直接向气瓶充装）",
+      "then_action": "S上调3级，O上调1级，D不变",
+      "action_explanation": "移动式压力容器之间相互装卸或直接向气瓶充装极易导致错装、超压、泄漏等严重事故，属严禁行为",
+      "remark": "来源：TSG R0005-2011 第1号修改单 5.10(5)"
+    },
+    {
+      "rule_id": "A-005",
+      "rule_class": "综合预防",
+      "if_condition": "IF 充装冷冻液化气体介质 AND 超过标态维持时间停放",
+      "then_action": "S上调2级，O上调1级，D下调1级",
+      "action_explanation": "超过标态维持时间停放可能导致罐内压力急剧升高，属运行管理类风险，有压力表可监测",
+      "remark": "来源：TSG R0005-2011 第1号修改单 5.13(4)"
+    },
+    {
+      "rule_id": "A-006",
+      "rule_class": "综合预防",
+      "if_condition": "IF 装运压缩天然气介质 AND P·V>350MPa·m³",
+      "then_action": "S上调3级，O上调1级，D不变",
+      "action_explanation": "超过P·V限制的压缩天然气罐体一旦失效，后果极为严重（爆炸当量大），属高风险限制条件",
+      "remark": "来源：TSG R0005-2011 第1号修改单 附件B B2.5"
+    },
+    {
+      "rule_id": "A-007",
+      "rule_class": "综合预防",
+      "if_condition": "IF 真空绝热罐体内容积>52.6m³",
+      "then_action": "S上调2级，O下调1级，D上调1级",
+      "action_explanation": "超大容积罐体失效后果严重，但制造要求高失效概率低，检测难度因体积大而增加",
+      "remark": "来源：TSG R0005-2011 第1号修改单 附件D D3.7"
+    },
+    {
+      "rule_id": "A-008",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 盛装毒性程度为极度/高度危害介质 AND 在湿H₂S腐蚀环境中使用",
+      "then_action": "S上调2级，O上调2级，D不变",
+      "action_explanation": "湿H₂S环境+高危害介质极易引发应力腐蚀开裂，属高风险工况，需100%无损检测",
+      "remark": "来源：TSG 21-2016 2.2.1.4.1"
+    },
+    {
+      "rule_id": "A-009",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 存在晶间腐蚀/应力腐蚀/点腐蚀/缝隙腐蚀等腐蚀介质环境",
+      "then_action": "S上调1级，O上调2级，D上调1级",
+      "action_explanation": "特殊腐蚀环境需在设计文件中提出耐腐蚀措施，否则腐蚀风险显著升高",
+      "remark": "来源：TSG 21-2016 3.2.7"
+    },
+    {
+      "rule_id": "A-010",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 压力容器存在环境开裂倾向（SCC/HIC/IGSCC等）AND 已发现裂纹",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "环境开裂一旦发生，裂纹扩展速度快，需缩短检验周期，探测难度因裂纹隐蔽性而增加",
+      "remark": "来源：TSG 21-2016 8.1.7.1(2)"
+    },
+    {
+      "rule_id": "A-011",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 介质或环境对材料腐蚀情况不明或异常",
+      "then_action": "S上调1级，O上调2级，D上调1级",
+      "action_explanation": "腐蚀情况不明时无法准确预估壁厚减薄速率，存在突发失效风险",
+      "remark": "来源：TSG 21-2016 8.1.7.1(1)"
+    },
+    {
+      "rule_id": "A-012",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 改变使用介质且可能造成腐蚀现象恶化",
+      "then_action": "S上调1级，O上调2级，D上调1级",
+      "action_explanation": "介质变更可能引入新的腐蚀机理，需缩短检验周期加强监控",
+      "remark": "来源：TSG 21-2016 8.1.7.1(3)"
+    },
+    {
+      "rule_id": "A-013",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 材质劣化现象明显（石墨化/回火脆化/氢腐蚀等）",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "材质劣化导致材料脆性增加，裂纹风险显著升高，需通过金相/硬度检测发现",
+      "remark": "来源：TSG 21-2016 8.1.7.1(4)"
+    },
+    {
+      "rule_id": "A-014",
+      "rule_class": "综合预防",
+      "if_condition": "IF 气瓶盛装单一气体（违反专用原则）",
+      "then_action": "S上调1级，O不变，D不变",
+      "action_explanation": "气瓶专用原则，防止错装混装，如违反可能导致介质不相容引发失效，但为管理类风险",
+      "remark": "来源：TSG 23-2021 1.7"
+    },
+    {
+      "rule_id": "A-015",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 盛装氯/溴化氢/氟化氢/氯甲烷/溴甲烷等对铝合金有晶间腐蚀或应力腐蚀倾向介质",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "铝合金对上述介质敏感，易发生晶间腐蚀或应力腐蚀开裂，应禁止使用",
+      "remark": "来源：TSG 23-2021 2.4(1)"
+    },
+    {
+      "rule_id": "A-016",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 盛装氢气或其他致脆性介质 AND 钢质气瓶材料实际抗拉强度>880MPa（屈强比>0.90时>950MPa）",
+      "then_action": "S上调2级，O上调1级，D上调1级",
+      "action_explanation": "过高抗拉强度材料在氢气环境下易发生氢脆开裂，需控制材料强度",
+      "remark": "来源：TSG 23-2021 2.2(7)"
+    },
+    {
+      "rule_id": "A-017",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 车用压缩天然气气瓶材料硫含量>0.005%或磷含量>0.010%",
+      "then_action": "S上调1级，O上调2级，D上调1级",
+      "action_explanation": "高硫磷含量降低材料抗硫化氢应力腐蚀能力，增加开裂风险",
+      "remark": "来源：TSG 23-2021 2.2(8)"
+    },
+    {
+      "rule_id": "A-018",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 锅炉受压元件可见部位存在腐蚀/磨损",
+      "then_action": "S上调1级，O上调1级，D下调1级",
+      "action_explanation": "腐蚀和磨损是锅炉受压元件最常见的减薄失效模式，外观可见，可通过定期检验监控",
+      "remark": "来源：TSG 11-2020 附件H/J"
+    },
+    {
+      "rule_id": "A-019",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 锅炉受压元件对接焊缝及热影响区存在裂纹",
+      "then_action": "S上调2级，O上调1级，D上调1级",
+      "action_explanation": "焊缝裂纹是锅炉最危险的失效模式之一，可能导致爆管或锅筒破裂，需NDT检测发现",
+      "remark": "来源：TSG 11-2020 附件J"
+    },
+    {
+      "rule_id": "A-020",
+      "rule_class": "综合预防",
+      "if_condition": "IF 锅炉水位低于最低安全水位",
+      "then_action": "S上调3级，O上调1级，D下调2级",
+      "action_explanation": "缺水运行是锅炉最严重的事故诱因之一，可导致炉管过热爆裂，但水位表可直观监测",
+      "remark": "来源：TSG 11-2020 8.7"
+    },
+    {
+      "rule_id": "A-021",
+      "rule_class": "综合预防",
+      "if_condition": "IF 锅炉排烟温度>170℃（热水/蒸汽锅炉）",
+      "then_action": "S不变，O上调1级，D下调1级",
+      "action_explanation": "排烟温度过高可能导致尾部受热面腐蚀或省煤器汽化，但通过温度仪表可实时监测",
+      "remark": "来源：TSG 91-2021 2.3.2"
+    },
+    {
+      "rule_id": "A-022",
+      "rule_class": "综合预防",
+      "if_condition": "IF 移动式压力容器充装单位未装设紧急切断装置",
+      "then_action": "S上调2级，O上调1级，D不变",
+      "action_explanation": "紧急切断装置在泄漏时能快速隔离介质，若无则事故扩大风险显著增加",
+      "remark": "来源：TSG 07-2019 附件C3.4.1(8)"
+    },
+    {
+      "rule_id": "A-023",
+      "rule_class": "综合预防",
+      "if_condition": "IF 装卸用管无防止拉脱的联锁保护装置",
+      "then_action": "S上调1级，O上调2级，D下调1级",
+      "action_explanation": "装卸时软管拉脱将导致大量泄漏，操作失误发生概率较高，但拉脱本身较易察觉",
+      "remark": "来源：TSG 07-2019 附件C3.4.2(3)"
+    },
+    {
+      "rule_id": "A-024",
+      "rule_class": "综合预防",
+      "if_condition": "IF 充装易燃易爆介质无静电接地设施",
+      "then_action": "S上调3级，O上调1级，D不变",
+      "action_explanation": "静电火花可引发爆炸，严重度极高（人员伤亡、设备损毁）",
+      "remark": "来源：TSG 07-2019 附件C3.6.2(3)"
+    },
+    {
+      "rule_id": "A-025",
+      "rule_class": "综合预防",
+      "if_condition": "IF 未按规定对装卸用管进行每年耐压试验",
+      "then_action": "O上调2级，S上调1级，D上调1级",
+      "action_explanation": "软管老化未检测，破裂概率增加，严重度因泄漏介质危害性而升高",
+      "remark": "来源：TSG 07-2019 附件C3.4.2(6)"
+    },
+    {
+      "rule_id": "A-026",
+      "rule_class": "综合预防",
+      "if_condition": "IF 充装系统未设置超装报警或自动切断装置",
+      "then_action": "O上调2级，S上调1级，D下调1级",
+      "action_explanation": "超装可能导致超压泄漏或运输中事故，但超装可通过称重发现",
+      "remark": "来源：TSG 07-2019 附件C3.4.1(2)"
+    },
+    {
+      "rule_id": "A-027",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 氧舱舱体实测壁厚 < 设计最小壁厚（腐蚀减薄）",
+      "then_action": "S上调2级，O上调1级，D下调1级",
+      "action_explanation": "壁厚减薄降低承压能力，可能导致破裂，但通过定期测厚可检出",
+      "remark": "来源：TSG 24-2015 定期检验中的壁厚测定要求"
+    },
+    {
+      "rule_id": "A-028",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 氧舱受压焊缝存在裂纹（NDT发现）",
+      "then_action": "S上调3级，O上调1级，D上调1级",
+      "action_explanation": "焊缝裂纹可能导致舱体爆裂，后果极严重（人员伤亡），NDT可检出但存在漏检可能",
+      "remark": "来源：TSG 24-2015 无损检测要求"
+    },
+    {
+      "rule_id": "A-029",
+      "rule_class": "综合预防",
+      "if_condition": "IF 氧舱密封件老化或损坏导致泄漏",
+      "then_action": "S上调1级，O上调2级，D下调2级",
+      "action_explanation": "泄漏导致舱内氧浓度升高，有燃烧风险，但密封件泄漏较易通过气压保持发现",
+      "remark": "来源：TSG 24-2015 气密性试验及密封性检查"
+    },
+    {
+      "rule_id": "A-030",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 氧舱外表面存在锈蚀（环境潮湿）",
+      "then_action": "S上调1级，O上调1级，D下调1级",
+      "action_explanation": "外壁腐蚀减薄，但外部目视检查可发现，探测难度较低",
+      "remark": "来源：TSG 24-2015 外部检查要求"
+    },
+    {
+      "rule_id": "B-001",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 设备类型=夹套容器 AND 加热介质变更（热水→蒸汽）AND 进汽口正对筒体/封头内壁",
+      "then_action": "S上调3级，O上调3级，D上调2级",
+      "action_explanation": "蒸汽遇低温水急剧冷凝形成局部真空和水锤，高速射流携带锈渣冲刷壁面，减薄速率可达10.3mm/年，属极高风险",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-002",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 缺陷类型=冲刷减薄 AND 壁厚年减薄率≥1mm/年",
+      "then_action": "S上调2级，O上调2级，D上调3级",
+      "action_explanation": "减薄速率过快（≥1mm/年），设备无法内部检验时探测难度极大",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-003",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 缺陷类型=局部腐蚀减薄 AND 实测最小壁厚 < 强度校核所需最小壁厚",
+      "then_action": "S上调3级，O上调2级，D下调2级",
+      "action_explanation": "强度校核不合格，剩余厚度不具备足够强度，无法防止破裂或塑性变形失效",
+      "remark": "来源：GB/T 150.3-2024"
+    },
+    {
+      "rule_id": "B-004",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 腐蚀减薄区域外观特征=密集点状凹坑 AND 截面形貌=波浪状/山峦状（无锐边）",
+      "then_action": "S不变，O不变，D下调2级",
+      "action_explanation": "局部腐蚀减薄的典型形貌特征，外观明显可见，可用于快速识别失效模式",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-005",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 氧舱舱体实测壁厚 < 设计最小壁厚",
+      "then_action": "S上调2级，O上调1级，D下调1级",
+      "action_explanation": "壁厚减薄降低承压能力，可能导致破裂，但通过定期测厚可检出",
+      "remark": "来源：GB/T 150.4-2024；TSG 24-2015"
+    },
+    {
+      "rule_id": "B-006",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 锅炉受压元件可见部位存在腐蚀/磨损",
+      "then_action": "S上调1级，O上调1级，D下调1级",
+      "action_explanation": "腐蚀和磨损是锅炉受压元件最常见的减薄失效模式，外观可见",
+      "remark": "来源：TSG 11-2020"
+    },
+    {
+      "rule_id": "B-007",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 充装腐蚀性介质（无水氨/氯/二氧化硫）AND 罐体设计使用年限已过15年",
+      "then_action": "O上调2级，S上调1级",
+      "action_explanation": "长期均匀腐蚀导致壁厚持续减薄，设计年限到达后腐蚀裕量可能耗尽",
+      "remark": "来源：TSG R0005-2011"
+    },
+    {
+      "rule_id": "B-008",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 介质或环境对材料腐蚀情况不明或异常",
+      "then_action": "S上调1级，O上调2级，D上调1级",
+      "action_explanation": "腐蚀情况不明时无法准确预估壁厚减薄速率，存在突发失效风险",
+      "remark": "来源：TSG 21-2016"
+    },
+    {
+      "rule_id": "B-009",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 改变使用介质且可能造成腐蚀现象恶化",
+      "then_action": "S上调1级，O上调2级，D上调1级",
+      "action_explanation": "介质变更可能引入新的腐蚀机理，需缩短检验周期加强监控",
+      "remark": "来源：TSG 21-2016"
+    },
+    {
+      "rule_id": "B-010",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 压力容器存在环境开裂倾向（SCC/HIC/IGSCC等）AND 已发现裂纹",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "环境开裂一旦发生，裂纹扩展速度快，需缩短检验周期",
+      "remark": "来源：TSG 21-2016"
+    },
+    {
+      "rule_id": "B-011",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 材质劣化现象明显（石墨化/回火脆化/氢腐蚀等）",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "材质劣化导致材料脆性增加，裂纹风险显著升高",
+      "remark": "来源：TSG 21-2016"
+    },
+    {
+      "rule_id": "B-012",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 盛装氢气或其他致脆性介质 AND 钢质气瓶材料实际抗拉强度>880MPa",
+      "then_action": "S上调2级，O上调1级，D上调1级",
+      "action_explanation": "过高抗拉强度材料在氢气环境下易发生氢脆开裂",
+      "remark": "来源：TSG 23-2021"
+    },
+    {
+      "rule_id": "B-013",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 锅炉受压元件对接焊缝及热影响区存在裂纹",
+      "then_action": "S上调2级，O上调1级，D上调1级",
+      "action_explanation": "焊缝裂纹是锅炉最危险的失效模式之一，可能导致爆管或锅筒破裂",
+      "remark": "来源：TSG 11-2020"
+    },
+    {
+      "rule_id": "B-014",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 氧舱受压焊缝存在裂纹（NDT发现）",
+      "then_action": "S上调3级，O上调1级，D上调1级",
+      "action_explanation": "焊缝裂纹可能导致舱体爆裂，后果极严重，NDT可检出但存在漏检",
+      "remark": "来源：TSG 24-2015"
+    },
+    {
+      "rule_id": "B-015",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 车用压缩天然气气瓶材料硫含量>0.005%或磷含量>0.010%",
+      "then_action": "S上调1级，O上调2级，D上调1级",
+      "action_explanation": "高硫磷含量降低材料抗硫化氢应力腐蚀能力，增加开裂风险",
+      "remark": "来源：TSG 23-2021"
+    },
+    {
+      "rule_id": "B-016",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 存在晶间腐蚀/应力腐蚀/点腐蚀/缝隙腐蚀等腐蚀介质环境",
+      "then_action": "S上调1级，O上调2级，D上调1级",
+      "action_explanation": "特殊腐蚀环境需在设计文件中提出耐腐蚀措施，否则腐蚀风险显著升高",
+      "remark": "来源：TSG 21-2016"
+    },
+    {
+      "rule_id": "B-017",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 设备类型=移动式压力容器 AND 罐体外表面存在油漆破损/剥离 AND 使用环境=高湿度地区（相对湿度≥60%）",
+      "then_action": "S上调2级，O上调2级（湿度≥80%则O上调3级），D下调2级",
+      "action_explanation": "漆层破损导致金属基体暴露，高湿度+Cl⁻加速腐蚀，3年减薄约1.56mm",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-018",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 缺陷类型=大气腐蚀 AND 设备材质=碳钢/低合金钢 AND 环境相对湿度≥60%",
+      "then_action": "S不变，O上调2级（湿度≥80%则O上调3级），D下调1级",
+      "action_explanation": "碳钢在相对湿度超过60%时腐蚀速率呈指数关系增大",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-019",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 腐蚀产物中检测到Cl⁻ AND Cl⁻含量≥1.0%（能谱分析）",
+      "then_action": "S上调1级，O上调2级，D下调1级",
+      "action_explanation": "Cl⁻能破坏钝化氧化膜，按“大阴极小阳极”理论加速腐蚀",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-020",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 盛装毒性程度为极度/高度危害介质 AND 在湿H₂S腐蚀环境中使用",
+      "then_action": "S上调2级，O上调2级，D不变",
+      "action_explanation": "湿H₂S环境+高危害介质极易引发应力腐蚀开裂，需100%无损检测",
+      "remark": "来源：TSG 21-2016"
+    },
+    {
+      "rule_id": "B-021",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 盛装氯/溴化氢/氟化氢/氯甲烷/溴甲烷等对铝合金有晶间腐蚀或应力腐蚀倾向介质",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "铝合金对上述介质敏感，易发生晶间腐蚀或应力腐蚀开裂",
+      "remark": "来源：TSG 23-2021"
+    },
+    {
+      "rule_id": "B-022",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 氧舱外表面存在锈蚀（环境潮湿）",
+      "then_action": "S上调1级，O上调1级，D下调1级",
+      "action_explanation": "外壁腐蚀减薄，但外部目视检查可发现",
+      "remark": "来源：TSG 24-2015"
+    },
+    {
+      "rule_id": "B-023",
+      "rule_class": "综合预防",
+      "if_condition": "IF 设备存在工艺变更（介质/温度/压力/加热方式改变）AND 变更未经安全评估",
+      "then_action": "S上调1级，O上调3级，D上调1级",
+      "action_explanation": "工艺变更可能导致超设计工况运行，引发不可预见的失效模式",
+      "remark": "来源：GB/T 26610.1-2022"
+    },
+    {
+      "rule_id": "B-024",
+      "rule_class": "综合预防",
+      "if_condition": "IF 设备为夹套结构 OR 无法开罐内部检验",
+      "then_action": "S不变，O不变，D上调3级",
+      "action_explanation": "夹套内部无法直接目视检验，探测度显著升高",
+      "remark": "来源：GB/T 26610.2-2022"
+    },
+    {
+      "rule_id": "B-025",
+      "rule_class": "综合预防",
+      "if_condition": "IF 设备外表面涂层存在脱落/破损 AND 投用前涂层质量未知",
+      "then_action": "S上调1级，O上调2级，D下调1级",
+      "action_explanation": "制造阶段油漆偷工减料导致大面积漆层剥离，引发外表面腐蚀",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-026",
+      "rule_class": "综合预防",
+      "if_condition": "IF 设备=移动式压力容器 AND 使用单位未建立外表面涂层完整性检查制度",
+      "then_action": "S不变，O上调2级，D不变",
+      "action_explanation": "使用单位忽视筒体表面腐蚀，导致腐蚀不断加重",
+      "remark": "来源：GB/T 26610.1-2022"
+    },
+    {
+      "rule_id": "B-027",
+      "rule_class": "综合预防",
+      "if_condition": "IF 汽车罐车长期停放在潮湿/高腐蚀性环境",
+      "then_action": "S不变，O上调2级，D下调1级",
+      "action_explanation": "潮湿高腐蚀环境显著增加外表面腐蚀风险，但环境条件可控且可观察",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-028",
+      "rule_class": "综合预防",
+      "if_condition": "IF 装运冷冻液化气体或液态二氧化碳 AND 需装设卸液泵",
+      "then_action": "S上调1级，O上调1级，D上调1级",
+      "action_explanation": "卸液泵增加泄漏风险点，探测难度因设备复杂性增加",
+      "remark": "来源：TSG R0005-2011"
+    },
+    {
+      "rule_id": "B-029",
+      "rule_class": "综合预防",
+      "if_condition": "IF 除应急救援情况外（移动式压力容器之间相互装卸/直接向气瓶充装）",
+      "then_action": "S上调3级，O上调1级，D不变",
+      "action_explanation": "移动式压力容器之间相互装卸或直接向气瓶充装极易导致错装、超压、泄漏等严重事故",
+      "remark": "来源：TSG R0005-2011"
+    },
+    {
+      "rule_id": "B-030",
+      "rule_class": "综合预防",
+      "if_condition": "IF 充装冷冻液化气体介质 AND 超过标态维持时间停放",
+      "then_action": "S上调2级，O上调1级，D下调1级",
+      "action_explanation": "超过标态维持时间停放可能导致罐内压力急剧升高，属运行管理类风险",
+      "remark": "来源：TSG R0005-2011"
+    },
+    {
+      "rule_id": "B-031",
+      "rule_class": "综合预防",
+      "if_condition": "IF 装运压缩天然气介质 AND P·V>350MPa·m³",
+      "then_action": "S上调3级，O上调1级，D不变",
+      "action_explanation": "超过P·V限制的压缩天然气罐体一旦失效，后果极为严重",
+      "remark": "来源：TSG R0005-2011"
+    },
+    {
+      "rule_id": "B-032",
+      "rule_class": "综合预防",
+      "if_condition": "IF 真空绝热罐体内容积>52.6m³",
+      "then_action": "S上调2级，O下调1级，D上调1级",
+      "action_explanation": "超大容积罐体失效后果严重，但制造要求高失效概率低",
+      "remark": "来源：TSG R0005-2011"
+    },
+    {
+      "rule_id": "B-033",
+      "rule_class": "综合预防",
+      "if_condition": "IF 气瓶盛装单一气体（违反专用原则）",
+      "then_action": "S上调1级，O不变，D不变",
+      "action_explanation": "气瓶专用原则，防止错装混装，如违反可能导致介质不相容引发失效",
+      "remark": "来源：TSG 23-2021"
+    },
+    {
+      "rule_id": "B-034",
+      "rule_class": "综合预防",
+      "if_condition": "IF 锅炉水位低于最低安全水位",
+      "then_action": "S上调3级，O上调1级，D下调2级",
+      "action_explanation": "缺水运行是锅炉最严重的事故诱因之一，可导致炉管过热爆裂",
+      "remark": "来源：TSG 11-2020"
+    },
+    {
+      "rule_id": "B-035",
+      "rule_class": "综合预防",
+      "if_condition": "IF 锅炉排烟温度>170℃（热水/蒸汽锅炉）",
+      "then_action": "S不变，O上调1级，D下调1级",
+      "action_explanation": "排烟温度过高可能导致尾部受热面腐蚀或省煤器汽化",
+      "remark": "来源：TSG 91-2021"
+    },
+    {
+      "rule_id": "B-036",
+      "rule_class": "综合预防",
+      "if_condition": "IF 移动式压力容器充装单位未装设紧急切断装置",
+      "then_action": "S上调2级，O上调1级，D不变",
+      "action_explanation": "紧急切断装置在泄漏时能快速隔离介质，若无则事故扩大风险显著增加",
+      "remark": "来源：TSG 07-2019"
+    },
+    {
+      "rule_id": "B-037",
+      "rule_class": "综合预防",
+      "if_condition": "IF 装卸用管无防止拉脱的联锁保护装置",
+      "then_action": "S上调1级，O上调2级，D下调1级",
+      "action_explanation": "装卸时软管拉脱将导致大量泄漏，操作失误发生概率较高",
+      "remark": "来源：TSG 07-2019"
+    },
+    {
+      "rule_id": "B-038",
+      "rule_class": "综合预防",
+      "if_condition": "IF 充装易燃易爆介质无静电接地设施",
+      "then_action": "S上调3级，O上调1级，D不变",
+      "action_explanation": "静电火花可引发爆炸，严重度极高",
+      "remark": "来源：TSG 07-2019"
+    },
+    {
+      "rule_id": "B-039",
+      "rule_class": "综合预防",
+      "if_condition": "IF 未按规定对装卸用管进行每年耐压试验",
+      "then_action": "O上调2级，S上调1级，D上调1级",
+      "action_explanation": "软管老化未检测，破裂概率增加，严重度因泄漏介质危害性而升高",
+      "remark": "来源：TSG 07-2019"
+    },
+    {
+      "rule_id": "B-040",
+      "rule_class": "综合预防",
+      "if_condition": "IF 充装系统未设置超装报警或自动切断装置",
+      "then_action": "O上调2级，S上调1级，D下调1级",
+      "action_explanation": "超装可能导致超压泄漏或运输中事故，但超装可通过称重发现",
+      "remark": "来源：TSG 07-2019"
+    },
+    {
+      "rule_id": "B-041",
+      "rule_class": "综合预防",
+      "if_condition": "IF 氧舱密封件老化或损坏导致泄漏",
+      "then_action": "S上调1级，O上调2级，D下调2级",
+      "action_explanation": "泄漏导致舱内氧浓度升高，有燃烧风险，但密封件泄漏较易发现",
+      "remark": "来源：TSG 24-2015"
+    },
+    {
+      "rule_id": "B-042",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 设备材质=300/400系列不锈钢 AND 介质=盐酸或含氯化物溶液",
+      "then_action": "S上调1级，O上调2级，D下调1级",
+      "action_explanation": "300/400系列不锈钢在盐酸环境中易发生点蚀，形成毫米级蚀坑甚至穿透性蚀孔",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-043",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 介质=稀硫酸 AND 流速>0.6m/s AND 存在湍流",
+      "then_action": "S上调1级，O上调2级，D不变",
+      "action_explanation": "稀硫酸在湍流条件下对碳钢产生点蚀，焊缝热影响区优先腐蚀",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-044",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 介质=含盐水（Cl⁻） AND 设备材质=不锈钢（300系） AND 温度在点蚀敏感区间",
+      "then_action": "S上调2级，O上调2级，D下调1级",
+      "action_explanation": "氯化物破坏不锈钢钝化膜，形成深点蚀坑，海水环境建议PRE≥40",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-045",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 设备存在积垢/沉积物（垢下） AND 介质含Cl⁻/硫化物",
+      "then_action": "S上调1级，O上调2级，D上调1级",
+      "action_explanation": "垢下形成氧浓差电池和氯离子浓缩，自催化加速点蚀",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-046",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 设备类型=冷却水系统（含淡水/海水） AND 300系不锈钢换热管",
+      "then_action": "S上调1级，O上调2级，D上调1级",
+      "action_explanation": "冷却水中Cl⁻、溶解氧、微生物共同作用，不锈钢易发生点蚀和缝隙腐蚀",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-047",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 设备有隔热层 AND 隔热材料含氯化物 AND 温度=80~150℃ AND 材质=300系不锈钢",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "隔热层下Cl⁻浓缩，80~150℃时氯化物应力腐蚀开裂和点蚀同时发生",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-048",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 腐蚀产物中检测到Cl⁻ AND 设备材质=奥氏体不锈钢",
+      "then_action": "S上调1级，O上调2级，D下调1级",
+      "action_explanation": "Cl⁻在不锈钢表面形成点蚀核，蚀坑内自催化加速",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-049",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 设备材质=碳钢/低合金钢 AND 环境相对湿度≥60% AND 表面有大气污染物（Cl⁻/SO₂）",
+      "then_action": "S不变，O上调2级，D下调1级",
+      "action_explanation": "潮湿大气中污染物形成电解质膜，碳钢发生大气点蚀",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "B-050",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 设备材质=钛或钛合金 AND 介质pH<3.0或pH>8.0 AND 温度>74℃",
+      "then_action": "S上调2级，O上调1级，D上调1级",
+      "action_explanation": "钛在极端pH和高温下钝化膜破坏，易发生局部点蚀和氢化",
+      "remark": "来源：GB/T 30579-2022"
+    },
+    {
+      "rule_id": "C-001",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 设备类型=夹套容器 AND 加热介质变更（热水→蒸汽）AND 进汽口正对筒体/封头内壁",
+      "then_action": "S上调3级，O上调3级，D上调2级",
+      "action_explanation": "蒸汽遇低温水急剧冷凝形成局部真空和水锤，高速射流携带锈渣冲刷壁面，减薄速率可达10.3mm/年，属极高风险",
+      "remark": "来源：液氯汽化器泄漏事故分析（周耘禾等，2026）"
+    },
+    {
+      "rule_id": "C-002",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 缺陷类型=冲刷减薄 AND 壁厚年减薄率≥1mm/年 AND 设备无法内部检验",
+      "then_action": "S上调2级，O上调2级，D上调3级",
+      "action_explanation": "减薄速率过快（案例达10.3mm/年），夹套无法内部检验，探测难度极大",
+      "remark": "同上"
+    },
+    {
+      "rule_id": "C-003",
+      "rule_class": "综合预防",
+      "if_condition": "IF 设备存在工艺变更（介质/温度/压力/加热方式改变）AND 变更未经安全评估",
+      "then_action": "S上调1级，O上调3级，D上调1级",
+      "action_explanation": "工艺变更可能导致超设计工况运行，引发不可预见的失效模式",
+      "remark": "来源：液氯汽化器事故 + TSG 21-2016"
+    },
+    {
+      "rule_id": "C-004",
+      "rule_class": "综合预防",
+      "if_condition": "IF 设备为夹套结构 OR 无法开罐内部检验",
+      "then_action": "S不变，O不变，D上调3级",
+      "action_explanation": "夹套内部无法直接目视检验，探测度显著升高",
+      "remark": "来源：液氯汽化器事故分析建议"
+    },
+    {
+      "rule_id": "C-005",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 设备类型=移动式压力容器 AND 罐体外表面存在油漆破损/剥离 AND 使用环境=高湿度地区",
+      "then_action": "S上调2级，O上调2级，D下调2级",
+      "action_explanation": "漆层破损导致金属基体暴露，高湿度+Cl⁻加速腐蚀，3年减薄约1.56mm，强度校核不合格",
+      "remark": "来源：付啸宇等，移动式压力容器外表面腐蚀减薄失效分析，2026"
+    },
+    {
+      "rule_id": "C-006",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 缺陷类型=大气腐蚀 AND 设备材质=碳钢/低合金钢 AND 环境相对湿度≥60%",
+      "then_action": "S不变，O上调2级（湿度≥80%则O上调3级），D下调1级",
+      "action_explanation": "碳钢在相对湿度超过60%时腐蚀速率呈指数关系增大",
+      "remark": "来源：论文引用GB/T 30579-2022"
+    },
+    {
+      "rule_id": "C-007",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 腐蚀产物中检测到Cl⁻ AND Cl⁻含量≥1.0%（能谱分析）",
+      "then_action": "S上调1级，O上调2级，D下调1级",
+      "action_explanation": "Cl⁻能破坏钝化氧化膜，按“大阴极小阳极”理论加速腐蚀",
+      "remark": "来源：论文EDS分析数据"
+    },
+    {
+      "rule_id": "C-008",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 缺陷类型=局部腐蚀减薄 AND 实测最小壁厚 < 强度校核所需最小壁厚",
+      "then_action": "S上调3级，O上调2级，D下调2级",
+      "action_explanation": "强度校核不合格，剩余厚度不具备足够强度，无法防止破裂或塑性变形失效",
+      "remark": "来源：论文强度校核计算"
+    },
+    {
+      "rule_id": "C-009",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 腐蚀减薄区域外观特征=密集点状凹坑 AND 截面形貌=波浪状/山峦状（无锐边）",
+      "then_action": "S不变，O不变，D下调2级",
+      "action_explanation": "局部腐蚀减薄的典型形貌特征，外观明显可见，可用于快速识别失效模式",
+      "remark": "来源：论文宏观检查描述"
+    },
+    {
+      "rule_id": "C-010",
+      "rule_class": "综合预防",
+      "if_condition": "IF 设备外表面涂层存在脱落/破损 AND 投用前涂层质量未知",
+      "then_action": "S上调1级，O上调2级，D下调1级",
+      "action_explanation": "制造阶段油漆偷工减料（无底漆、漆层偏薄）导致大面积漆层剥离，引发外表面腐蚀",
+      "remark": "来源：论文失效原因分析"
+    },
+    {
+      "rule_id": "C-011",
+      "rule_class": "综合预防",
+      "if_condition": "IF 设备=移动式压力容器 AND 使用单位未建立外表面涂层完整性检查制度",
+      "then_action": "S不变，O上调2级，D不变",
+      "action_explanation": "使用单位忽视筒体表面腐蚀，导致腐蚀不断加重，管理类缺陷增加发生概率",
+      "remark": "来源：论文预防措施"
+    },
+    {
+      "rule_id": "C-012",
+      "rule_class": "综合预防",
+      "if_condition": "IF 汽车罐车长期停放在潮湿/高腐蚀性环境",
+      "then_action": "S不变，O上调2级，D下调1级",
+      "action_explanation": "潮湿高腐蚀环境显著增加外表面腐蚀风险，但环境条件可控且可观察",
+      "remark": "来源：论文预防措施"
+    },
+    {
+      "rule_id": "C-013",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 设备类型=换热器（浮头式）AND 介质=含酸性气的闪蒸气 AND 入口接管正对筒壁",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "高温闪蒸气长期冲刷对面筒壁，酸性气冷凝后进一步腐蚀，导致局部壁厚减薄。案例：3年减薄至4.8mm",
+      "remark": "来源：李忠勇《压力容器筒壁减薄的原因分析与修复处理》"
+    },
+    {
+      "rule_id": "C-014",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 缺陷类型=冲刷减薄 AND 设备材质=Q345R AND 介质含固体颗粒（吸附剂/催化剂）",
+      "then_action": "S上调2级，O上调2级，D上调2级",
+      "action_explanation": "固体颗粒在高压气流作用下冲击筒体内壁，造成机械剥落，形成局部减薄坑。案例：闭锁料斗小筒节减薄4.2mm",
+      "remark": "来源：彭泽军《基于疲劳压力容器局部减薄缺陷的分析与处理》"
+    },
+    {
+      "rule_id": "C-015",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 设备类型=移动式压力容器（汽车罐车）AND 外表面漆层破损/剥离 AND 使用环境=高湿度/沿海地区",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "漆层破损导致金属基体暴露于潮湿大气，发生大气腐蚀减薄。案例：3年减薄1.56mm，强度校核不合格",
+      "remark": "来源：付啸宇《一起移动式压力容器外表面腐蚀减薄失效原因分析》"
+    },
+    {
+      "rule_id": "C-016",
+      "rule_class": "减薄规则",
+      "if_condition": "IF 缺陷类型=局部减薄 AND 设备承受疲劳载荷",
+      "then_action": "S上调2级，O上调1级，D上调1级",
+      "action_explanation": "疲劳载荷下局部减薄处应力集中，需进行应力分析评定。应力分析法可判定减薄不影响疲劳寿命",
+      "remark": "来源：彭泽军《基于疲劳压力容器局部减薄缺陷的分析与处理》"
+    },
+    {
+      "rule_id": "C-017",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 设备材质=304不锈钢 AND 存在Cl⁻腐蚀环境 AND 存在残余应力",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "Cl⁻破坏不锈钢钝化膜，残余应力促进裂纹萌生和扩展，形成应力腐蚀开裂。案例：蒸汽过滤器封头11处裂纹",
+      "remark": "来源：姜小刚《压力容器腐蚀泄漏研究与防护》"
+    },
+    {
+      "rule_id": "C-018",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 不锈钢封头直边段硬度>300HB AND 存在Cl⁻环境",
+      "then_action": "S上调2级，O上调1级，D上调1级",
+      "action_explanation": "加工硬化导致硬度超标（>300HB），残余应力高达639.5MPa，在Cl⁻环境下极易发生SCC",
+      "remark": "同上"
+    },
+    {
+      "rule_id": "C-019",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 设备材质=奥氏体不锈钢 AND 断口表面检测到Cl⁻（能谱分析）",
+      "then_action": "S上调2级，O上调2级，D下调1级",
+      "action_explanation": "断口表面Cl⁻浓度高（可达1.30%），表明裂纹为Cl⁻应力腐蚀开裂（SCC），沿晶扩展为主",
+      "remark": "同上"
+    },
+    {
+      "rule_id": "C-020",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 锅炉压力容器焊缝存在未焊透/气孔/夹渣等焊接缺陷",
+      "then_action": "S上调1级，O上调2级，D上调1级",
+      "action_explanation": "焊接缺陷形成应力集中点，在交变载荷下易萌生裂纹，导致设备失效",
+      "remark": "来源：曲景权《锅炉压力容器裂纹的形成原因及预防策略》；何志群《锅炉压力容器与压力管道裂纹及预防策略分析》"
+    },
+    {
+      "rule_id": "C-021",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 压力容器存在超标裂纹缺陷（表面裂纹）AND 未进行安全评定",
+      "then_action": "S上调2级，O上调1级，D上调1级",
+      "action_explanation": "超标裂纹需按GB/T19624进行安全评定，否则存在突发失效风险",
+      "remark": "来源：韦保《压力容器裂纹安全评定和剩余寿命计算》"
+    },
+    {
+      "rule_id": "C-022",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 压力容器存在裂纹缺陷 AND 材料=Q345R AND 运行工况=交变载荷",
+      "then_action": "S上调1级，O上调1级，D下调1级",
+      "action_explanation": "Paris模型计算剩余寿命。案例：a=0.5mm表面裂纹，剩余寿命65年（>设计寿命10年），可通过打磨处理",
+      "remark": "同上"
+    },
+    {
+      "rule_id": "C-023",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 压力容器材质劣化（晶粒粗大/偏析/夹杂）AND 运行在高温高压环境",
+      "then_action": "S上调1级，O上调2级，D上调1级",
+      "action_explanation": "材料缺陷（晶粒粗大、偏析、夹杂）形成薄弱区域，在高温高压下易萌生裂纹",
+      "remark": "来源：何志群《锅炉压力容器与压力管道裂纹及预防策略分析》"
+    },
+    {
+      "rule_id": "C-024",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 设备材质=Q345R AND 外表面漆层破损 AND 环境相对湿度≥60% AND 空气中含Cl⁻",
+      "then_action": "S上调2级，O上调2级（湿度≥80%则O上调3级），D下调1级",
+      "action_explanation": "漆层破损→金属裸露→潮湿大气+Cl⁻→大气腐蚀",
+      "remark": "来源：付啸宇《一起移动式压力容器外表面腐蚀减薄失效原因分析》"
+    },
+    {
+      "rule_id": "C-025",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 腐蚀产物中检测到Cl⁻（能谱分析）AND 设备材质=碳钢/低合金钢",
+      "then_action": "S上调1级，O上调2级，D下调1级",
+      "action_explanation": "Cl⁻含量可达1.30%，破坏锈层结构，形成“大阴极小阳极”加速腐蚀",
+      "remark": "同上"
+    },
+    {
+      "rule_id": "C-026",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 设备材质=304不锈钢 AND 长期暴露于海洋大气环境",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "海洋大气含Cl⁻，304不锈钢表面氧化膜被破坏，发生大气应力腐蚀开裂",
+      "remark": "来源：姜小刚《压力容器腐蚀泄漏研究与防护》"
+    },
+    {
+      "rule_id": "C-027",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 压力容器材质=碳钢/低合金钢 AND 介质含H₂S/Cl⁻ AND 存在拉应力",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "应力和腐蚀介质共同作用→应力腐蚀开裂。裂纹沿晶扩展，断口可见腐蚀产物",
+      "remark": "来源：卢锡铭《化工压力容器腐蚀影响因素及防腐措施探讨》"
+    },
+    {
+      "rule_id": "C-028",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 压力容器介质温度>100℃ AND 介质含腐蚀性物质（酸/碱/盐）",
+      "then_action": "S上调1级，O上调2级，D不变",
+      "action_explanation": "温度每升高10℃，腐蚀速率增加1~3倍。高温降低介质电阻，加速电化学腐蚀",
+      "remark": "来源：孙思《化工压力容器腐蚀影响因素及防腐策略》"
+    },
+    {
+      "rule_id": "C-029",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 不锈钢压力容器焊缝存在晶间腐蚀倾向（敏化）",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "焊接热影响区敏化→晶界贫铬→晶间腐蚀→裂纹沿晶界扩展，材料强度丧失",
+      "remark": "来源：孙思《化工压力容器腐蚀影响因素及防腐策略》"
+    },
+    {
+      "rule_id": "C-030",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 设备材质=奥氏体不锈钢 AND 水压试验介质中Cl⁻含量超标",
+      "then_action": "S上调1级，O上调1级，D上调1级",
+      "action_explanation": "水压试验介质中Cl⁻含量超标（>25mg/L）→不锈钢表面Cl⁻聚集→应力腐蚀开裂风险",
+      "remark": "来源：姜小刚《压力容器腐蚀泄漏研究与防护》"
+    },
+    {
+      "rule_id": "C-031",
+      "rule_class": "综合预防",
+      "if_condition": "IF 压力容器存在局部减薄缺陷 AND 缺陷位置无法打磨补焊",
+      "then_action": "S不变，O不变，D上调2级",
+      "action_explanation": "无法打磨补焊时，需采用应力分析法评定。探测难度增加，需结合有限元分析判断安全性",
+      "remark": "来源：彭泽军《基于疲劳压力容器局部减薄缺陷的分析与处理》"
+    },
+    {
+      "rule_id": "C-032",
+      "rule_class": "综合预防",
+      "if_condition": "IF 移动式压力容器 AND 使用单位未建立外表面涂层完整性检查制度",
+      "then_action": "S不变，O上调2级，D不变",
+      "action_explanation": "使用单位忽视筒体表面腐蚀，导致腐蚀不断加重，管理类缺陷增加发生概率",
+      "remark": "来源：付啸宇《一起移动式压力容器外表面腐蚀减薄失效原因分析》"
+    },
+    {
+      "rule_id": "C-033",
+      "rule_class": "综合预防",
+      "if_condition": "IF 汽车罐车长期停放在潮湿/高腐蚀性环境",
+      "then_action": "S不变，O上调2级，D下调1级",
+      "action_explanation": "潮湿高腐蚀环境显著增加外表面腐蚀风险，但环境条件可控且可观察",
+      "remark": "同上"
+    },
+    {
+      "rule_id": "C-034",
+      "rule_class": "综合预防",
+      "if_condition": "IF 压力容器制造过程中焊接工艺参数控制不当（电流/电压/速度）",
+      "then_action": "S不变，O上调2级，D上调1级",
+      "action_explanation": "焊接参数不当→焊接缺陷（气孔、夹渣、未焊透）→应力集中→裂纹萌生",
+      "remark": "来源：郝荣《压力容器制造过程中的防变形分析》；田志勇《压力容器焊接应力与变形控制技术研究》"
+    },
+    {
+      "rule_id": "C-035",
+      "rule_class": "综合预防",
+      "if_condition": "IF 压力容器焊接后未进行消除应力热处理",
+      "then_action": "S上调1级，O上调2级，D上调1级",
+      "action_explanation": "焊接残余应力未消除→应力腐蚀开裂风险增加→焊缝区域裂纹敏感性升高",
+      "remark": "来源：田志勇《压力容器焊接应力与变形控制技术研究》"
+    },
+    {
+      "rule_id": "C-036",
+      "rule_class": "综合预防",
+      "if_condition": "IF 压力容器投用前未进行严格的材料验收和复验",
+      "then_action": "S上调1级，O上调2级，D不变",
+      "action_explanation": "材料缺陷（成分超标、硬度超标）是裂纹源头，需加强入场检验",
+      "remark": "来源：姜小刚《压力容器腐蚀泄漏研究与防护》"
+    },
+    {
+      "rule_id": "C-037",
+      "rule_class": "综合预防",
+      "if_condition": "IF 锅炉压力容器运行中未定期进行无损检测（UT/MT/PT）",
+      "then_action": "S不变，O上调2级，D上调1级",
+      "action_explanation": "缺乏有效检测→裂纹无法及时发现→裂纹扩展导致突发失效",
+      "remark": "来源：曲景权/何志群《锅炉压力容器裂纹的形成原因及预防策略》"
+    },
+    {
+      "rule_id": "C-038",
+      "rule_class": "综合预防",
+      "if_condition": "IF 压力容器存在表面裂纹缺陷 AND 裂纹尺寸在允许打磨范围内",
+      "then_action": "S不变，O不变，D下调2级",
+      "action_explanation": "表面裂纹可通过打磨消除，打磨后凹坑在允许范围内，不影响定级。探测难度低",
+      "remark": "来源：韦保《压力容器裂纹安全评定和剩余寿命计算》"
+    },
+    {
+      "rule_id": "C-039",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 压力容器存在超标缺陷（超声检测III级）AND 缺陷位于氢气管线/含氢介质",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "氢气储罐缺陷在循环载荷下可能扩展，需合于使用评价。案例：电厂氢气储罐经评价可继续运行1年",
+      "remark": "来源：梅兰《某电厂氢气储罐定期检验缺陷分析及评价》"
+    },
+    {
+      "rule_id": "C-040",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 压力容器焊缝存在焊接缺陷（气孔/夹渣/未焊透）AND 存在循环载荷",
+      "then_action": "S上调1级，O上调1级，D下调1级",
+      "action_explanation": "焊接缺陷在循环载荷下可扩展，需通过FAD图进行合于使用评价。案例：储罐评价点位于FAD安全区内",
+      "remark": "同上"
+    },
+    {
+      "rule_id": "C-041",
+      "rule_class": "综合预防",
+      "if_condition": "IF 压力容器存在超标缺陷 AND 氢气区域无法动火消缺",
+      "then_action": "S不变，O不变，D上调2级",
+      "action_explanation": "涉氢区域禁止动火，无法打磨补焊，需通过合于使用评价+缩短检验周期进行风险管控",
+      "remark": "同上"
+    },
+    {
+      "rule_id": "C-042",
+      "rule_class": "综合预防",
+      "if_condition": "IF 压力容器焊缝存在超标缺陷 AND 经合于使用评价（FFS）合格",
+      "then_action": "S上调1级，O下调1级，D下调1级",
+      "action_explanation": "合于使用评价+缩短检验周期可作为替代消缺的风险管控措施。案例：储罐定检周期缩短至1年",
+      "remark": "同上"
+    },
+    {
+      "rule_id": "C-043",
+      "rule_class": "综合预防",
+      "if_condition": "IF 压力容器存在焊接缺陷 AND 出厂射线底片与超声检测结果无法复现比对",
+      "then_action": "S不变，O上调1级，D上调1级",
+      "action_explanation": "超声与射线检测结果无法比对时，按从严原则处理，采用超声结果作为评价依据",
+      "remark": "同上"
+    },
+    {
+      "rule_id": "C-044",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 设备类型=储氢高压容器 AND 人孔圈端面存在弧坑裂纹",
+      "then_action": "S上调2级，O上调1级，D上调1级",
+      "action_explanation": "弧坑裂纹位于人孔圈端面，属关键承压部位。案例：湖州特检院检验发现立即停用整改",
+      "remark": "来源：湖州特检院（中国市场监管报2025.5.15）"
+    },
+    {
+      "rule_id": "C-045",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 设备类型=储氢高压容器 AND 焊缝内表面存在裂纹",
+      "then_action": "S上调3级，O上调1级，D上调1级",
+      "action_explanation": "焊缝内表面裂纹无法目视发现，需UT/MT检测。案例：湖州特检院检出2段裂纹，立即整改",
+      "remark": "同上"
+    },
+    {
+      "rule_id": "C-046",
+      "rule_class": "综合预防",
+      "if_condition": "IF 设备类型=储氢高压容器 AND 存在裂纹缺陷",
+      "then_action": "S上调1级，O上调1级，D下调1级",
+      "action_explanation": "发现问题后立即停用，组织专业维修团队处理，整改后全面复检确认安全后方允许重新投运",
+      "remark": "同上"
+    },
+    {
+      "rule_id": "D-001",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 设备类型=快开门式压力容器 AND 筒体靠近快开门联锁装置的整圈锻件部位存在纵向裂纹",
+      "then_action": "S上调3级，O上调1级，D上调1级",
+      "action_explanation": "该部位长期承受交变载荷，裂纹呈整圈分布，属关键承压部件严重超标缺陷。根据TSG 21-2016判定无修复价值，应报废处理",
+      "remark": "来源：D类-内蒙古特检院巴彦淖尔分院2026年5月定期检验案例"
+    },
+    {
+      "rule_id": "D-002",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 压力容器焊缝存在树枝状分叉裂纹 AND 部分已贯穿 AND 设备长期在Cl⁻超标/高温工况运行",
+      "then_action": "S上调2级，O上调2级，D不变",
+      "action_explanation": "典型氯化物应力腐蚀开裂（Cl⁻SCC），裂纹发展迅速不可预测，是最危险的失效形式之一，应立即停用报废",
+      "remark": "来源：D类-内蒙古特检院巴彦淖尔分院2026年5月定期检验案例"
+    },
+    {
+      "rule_id": "D-003",
+      "rule_class": "腐蚀规则",
+      "if_condition": "IF 设备材质=奥氏体不锈钢 AND 运行环境=氯离子严重超标+高温 AND 焊缝区域存在树枝状分叉裂纹",
+      "then_action": "S上调2级，O上调2级，D上调1级",
+      "action_explanation": "氯化物应力腐蚀开裂（Cl⁻SCC）为典型失效模式，裂纹呈树枝状分叉，部分贯穿，发展迅速不可预测",
+      "remark": "来源：D类-内蒙古特检院巴彦淖尔分院2026年5月定期检验案例"
+    },
+    {
+      "rule_id": "D-004",
+      "rule_class": "综合预防",
+      "if_condition": "IF 压力容器存在超标缺陷 AND 可通过无损检测技术补救 AND 经合于使用评价（FFS）合格",
+      "then_action": "S上调1级，O下调1级，D下调1级",
+      "action_explanation": "通过缺陷安全评估和合于使用评价，可避免直接报废。厦门特检院案例：通过NDT补救+安全评估，为企业节约设备损失上千万元",
+      "remark": "来源：D类-厦门特检院无损检测补救+缺陷安全评估案例"
+    },
+    {
+      "rule_id": "D-005",
+      "rule_class": "综合预防",
+      "if_condition": "IF 压力容器已超设计使用年限 AND 通过合于使用评价（FFS）评估合格",
+      "then_action": "S上调1级，O上调1级，D下调1级",
+      "action_explanation": "超设计使用年限设备需进行合于使用评价，评估合格后可继续安全运行，避免停运换新造成的巨额经济损失",
+      "remark": "来源：D类-滨州特检院联动中国特检院合于使用评价案例"
+    },
+    {
+      "rule_id": "D-006",
+      "rule_class": "裂纹规则",
+      "if_condition": "IF 设备类型=储氢高压容器 AND 人孔圈端面或焊缝内表面存在裂纹",
+      "then_action": "S上调2级，O上调1级，D上调1级",
+      "action_explanation": "储氢高压容器裂纹属重大安全隐患，必须立即停用整改。湖州特检院案例：2025年5月检出后停用整改，复检合格后方可投运",
+      "remark": "来源：D类-湖州特检院储氢高压容器检验案例（中国市场监管报2025.5.15）"
+    }
+  ]
+}

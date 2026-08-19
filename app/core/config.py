@@ -1,10 +1,11 @@
 ﻿"""
-集中化配置中心（终极版 v4.1）
+集中化配置中心（终极版 v4.2）
 - 所有环境变量均可通过 .env 或系统环境注入，敏感信息严禁硬编码
 - 自动兼容旧变量名（如 LLM_MODEL_NAME → LLM_MODEL），并发出升级警告
 - 开发默认使用异步 SQLite，生产请务必通过环境变量切换为 PostgreSQL（asyncpg 等）
 - 统一所有数据路径到 PROJECT_ROOT/data 下，确保跨平台兼容
 - 包含风险管理相关阈值配置（HIGH_RISK_THRESHOLD、FORCE_SUSPEND_S9）
+- 新增：PWHT 焊后热处理标准知识库路径配置（data/pwht_kb）
 """
 import os
 import logging
@@ -25,6 +26,8 @@ load_dotenv(DOTENV, override=False)
 (PROJECT_ROOT / "data" / "standards").mkdir(parents=True, exist_ok=True)
 (PROJECT_ROOT / "data" / "chroma_db").mkdir(parents=True, exist_ok=True)
 (PROJECT_ROOT / "data" / "faiss_index").mkdir(parents=True, exist_ok=True)
+# ★ 新增：PWHT 结构化标准知识库目录
+(PROJECT_ROOT / "data" / "pwht_kb").mkdir(parents=True, exist_ok=True)
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +72,9 @@ class Settings(BaseSettings):
     STANDARDS_FOLDER: str = str(PROJECT_ROOT / "data" / "standards")
     CHROMA_PERSIST_DIR: str = str(PROJECT_ROOT / "data" / "chroma_db")
     FAISS_INDEX_PATH: str = str(PROJECT_ROOT / "data" / "faiss_index")
+
+    # ★ 新增：PWHT 焊后热处理结构化标准知识库文件夹
+    PWHT_KB_FOLDER: str = str(PROJECT_ROOT / "data" / "pwht_kb")
 
     # ========== 文档切分参数 ==========
     CHUNK_SIZE: int = 500
@@ -121,3 +127,5 @@ LAW_FOLDER = PROJECT_ROOT / "regulations"
 STANDARDS_FOLDER = Path(settings.STANDARDS_FOLDER)
 CHROMA_PERSIST_DIR = Path(settings.CHROMA_PERSIST_DIR)
 FAISS_INDEX_PATH = Path(settings.FAISS_INDEX_PATH)
+# ★ 新增：导出 PWHT 知识库文件夹的 Path 对象
+PWHT_KB_FOLDER = Path(settings.PWHT_KB_FOLDER)

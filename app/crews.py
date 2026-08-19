@@ -1,5 +1,5 @@
 """
-app/crews.py – 缺陷提取与 FMEA 分析双智能体（终极版 v7.3）
+app/crews.py – 缺陷提取与 FMEA 分析双智能体（终极版 v7.5）
 
 核心功能：
 1. 缺陷提取（稳健 JSON 解析，兼容不支持 response_format 的 LLM）
@@ -10,17 +10,11 @@ app/crews.py – 缺陷提取与 FMEA 分析双智能体（终极版 v7.3）
 6. 端到端流水线（run_full_fmea）
 7. 向后兼容旧版 API（run_fmea_evaluation / run_full_fmea_evaluation）
 
-更新日志 v7.3：
-- 强化 extract_defects 的 Prompt，增加 JSON Schema 示例，强制要求 defect_type 和 original_text
-- 配合 schemas.py v2.1 的 model_validator，实现 type→defect_type 自动映射和缺失字段兜底
-- 彻底消除因字段名不一致导致的 Pydantic 验证错误
-
-⚠️ 数据流兼容说明：
-  本模块输出的 DefectBase 模型包含字段 `defect_type`，而规则引擎（rule_engine）与评估函数
-  期望的字段名为 `type`。因此在 defect_processor.py 的 extract_defects 函数中，需要执行：
-      for d in defects:
-          d["type"] = d.pop("defect_type", d.get("type"))
-  以确保下游处理不受影响。此映射已纳入 defect_processor 最佳实践。
+v7.5 修改说明：
+- 自动提升 LLM max_tokens 至 8000（若配置较低），避免输出截断。
+- 简化 FMEA 提示词，移除 summary 要求，降低 token 消耗，减少格式混乱。
+- 增加缺陷项字段补全逻辑，不再因个别字段缺失而丢弃整条记录。
+- 批量解析失败时自动降级为单条 LLM 评估，保证返回有效结果。
 """
 
 import re
@@ -81,6 +75,15 @@ def get_llm() -> LLM:
     api_key = settings.LLM_API_KEY
     temperature = settings.LLM_TEMPERATURE
     max_tokens = settings.LLM_MAX_TOKENS
+
+    # ── 修改：自动提升 max_tokens，防止输出截断 ──
+    if max_tokens < 8000:
+        logger.warning(
+            "LLM_MAX_TOKENS 为 %s，可能导致输出截断；自动提升至 8000。"
+            "建议在 .env 中设置 LLM_MAX_TOKENS=8000。",
+            max_tokens,
+        )
+        max_tokens = 8000
 
     if not api_key:
         raise LLMAPIError(
@@ -290,7 +293,7 @@ def extract_defects(report_text: str) -> DefectExtractionResult:
     3. 通过 DefectExtractionResult.model_validate 强校验结构（自动映射字段、补充缺失值）。
 
     Returns:
-        DefectExtractionResult 包含 defects 列表，每个缺陷包含壁厚、深度、新字段等
+        DefectExtractionResult 包含 defects 列表，每个缺陷包含壁厚、深度、上下文信息等
     """
     agent = Agent(
         role="特种设备缺陷解析专家",
@@ -302,6 +305,7 @@ def extract_defects(report_text: str) -> DefectExtractionResult:
     )
 
     # 强化后的 Prompt：明确字段名、示例结构、关键约束
+    # 新增上下文字段以支持专家规则和案例匹配
     task = Task(
         description=f"""请根据以下报告文本，提取所有缺陷并严格按照 JSON Schema 输出。
 
@@ -323,6 +327,12 @@ def extract_defects(report_text: str) -> DefectExtractionResult:
     · quantity         → 数量（整数），默认 1
     · component        → 部件（如“筒体”、“焊缝”），若无则为 null
     · unit             → 单位，默认 "mm"
+    · media            → 充装/接触介质（如“液氨”、“氯”），若报告未提及则为 null
+    · material         → 罐体/构件材质（如“Q345R”），若报告未提及则为 null
+    · device_type      → 设备类型/大类（如“移动式压力容器”），若报告未提及则为 null
+    · environment      → 使用环境描述（如“室外”、“海洋大气”），若报告未提及则为 null
+    · operating_temperature → 操作温度（℃，数值），若报告未提及则为 null
+    · design_pressure  → 设计压力（MPa，数值），若报告未提及则为 null
 
 - 请严格按照以下示例格式输出（注意字段名必须完全一致）：
   {{
@@ -339,7 +349,13 @@ def extract_defects(report_text: str) -> DefectExtractionResult:
         "inspection_interval": null,
         "quantity": 1,
         "component": null,
-        "unit": "mm"
+        "unit": "mm",
+        "media": "液氨",
+        "material": "Q345R",
+        "device_type": "移动式压力容器",
+        "environment": "室外",
+        "operating_temperature": null,
+        "design_pressure": 2.5
       }}
     ]
   }}
@@ -414,7 +430,34 @@ def analyze_fmea(defects: Union[DefectExtractionResult, List[Dict]]) -> FMEAAnal
     # 1. 定量预评分（已包含 M‑2 调整）
     scored = pre_score_defects(raw_list)
 
-    # 2. 构建 LLM 提示词（注入预评分与基础规则）
+    def _process_defect_item(item_dict: dict) -> Optional[FMEAItem]:
+        """处理单个缺陷字典，补全缺失字段并构造 FMEAItem，失败返回 None。"""
+        if not isinstance(item_dict, dict):
+            return None
+        # ── 修改：补全缺失字段，避免因个别缺失而丢弃整条记录 ──
+        item_dict.setdefault("id", len(result_items) + 1)
+        item_dict.setdefault("defect_type", "未知缺陷")
+        item_dict.setdefault("original_text", "")
+        item_dict.setdefault("severity", 5)
+        item_dict.setdefault("occurrence", 3)
+        item_dict.setdefault("detection", 4)
+        item_dict.setdefault(
+            "rpn",
+            item_dict["severity"] * item_dict["occurrence"] * item_dict["detection"]
+        )
+        item_dict.setdefault(
+            "risk_level",
+            "中风险" if item_dict["rpn"] > 50 else "低风险"
+        )
+        item_dict.setdefault("reasons", "")
+        item_dict.setdefault("suggestion", "")
+        try:
+            return FMEAItem(**item_dict)
+        except ValidationError as e:
+            logger.warning(f"缺陷项格式错误，已跳过: {e}")
+            return None
+
+    # 2. 构建 LLM 提示词（注入预评分与基础规则，同时携带上下文信息）
     defect_lines = []
     for idx, d in enumerate(scored, start=1):
         line = (
@@ -425,26 +468,30 @@ def analyze_fmea(defects: Union[DefectExtractionResult, List[Dict]]) -> FMEAAnal
             f"检测方法={d.get('detection_method', '未知')}, "
             f"服役年限={d.get('service_years', '未知')}年, "
             f"检验间隔={d.get('inspection_interval', '未知')}, "
+            f"介质={d.get('media', '未知')}, 材质={d.get('material', '未知')}, "
+            f"设备类型={d.get('device_type', '未知')}, 环境={d.get('environment', '未知')}, "
+            f"操作温度={d.get('operating_temperature', '未知')}℃, "
+            f"设计压力={d.get('design_pressure', '未知')}MPa, "
             f"系统预评 S={d['severity']} O={d['occurrence']} D={d['detection']} (预RPN={d['pre_rpn']}), "
             f"原始描述: {d.get('original_text', '')[:80]}..."
         )
         defect_lines.append(line)
 
     prompt = f"""
-作为承压设备 FMEA 评审专家，请根据以下缺陷信息及系统预评分，输出最终评估结果（JSON 数组）。
-系统预评分已参考设备服役年限、检验间隔、检测方法等因素进行了调整，你可在其基础上结合工程经验微调（幅度 ≤2分），并说明理由。
+你是承压设备 FMEA 评审专家。请根据以下缺陷信息及系统预评分，输出最终评分(JSON 数组)。
+你只需输出 JSON 数组，不要附加任何解释，不要输出 summary 字段。
 
-严格遵循以下规则：
-1. S（严重度）主要参考“深度/壁厚”比，裂纹、贯穿性缺陷可+2（上限10）。
-2. O（发生度）参考数量和历史，腐蚀类缺陷易复发可+1~2。
-3. D（检测度）参考尺寸，小于1mm深度极难发现，可设为8-10。
-4. 风险等级按 RPN 划分：低（1-50）、中（51-100）、高（101-200）、严重（>200）。
-5. 对于高严重度或高 RPN 的缺陷，务必给出明确改进建议。
+规则：
+1. S（严重度）: 参考“深度/壁厚”比，裂纹可+2（上限10）。
+2. O（发生度）: 参考数量，腐蚀类可+1~2。
+3. D（检测度）: 参考尺寸，深度<1mm 可设为8-10。
+4. 风险等级按 RPN: 低(1-50)、中(51-100)、高(101-200)、严重(>200)。
+5. 对高风险缺陷给出简洁建议。
 
 具体缺陷清单：
 {chr(10).join(defect_lines)}
 
-输出格式（严格 JSON 数组，无注释，不要包含 Markdown 代码块）：
+输出格式（严格 JSON 数组，不要用 Markdown 代码块）：
 [
   {{
     "id": 1,
@@ -455,12 +502,11 @@ def analyze_fmea(defects: Union[DefectExtractionResult, List[Dict]]) -> FMEAAnal
     "detection": <int>,
     "rpn": <自动计算>,
     "risk_level": "低/中/高/严重",
-    "reasons": "调整理由...",
-    "suggestion": "改进建议..."
-  }},
-  ...
+    "reasons": "简短调整理由（不超过20字）",
+    "suggestion": "简短改进建议（不超过30字）"
+  }}
 ]
-同时，在数组外加一个 "summary" 字段（可选），对整体情况作简短总结。
+只输出一个 JSON 数组，不要包含任何其他内容。
 """
 
     agent = Agent(
@@ -474,7 +520,7 @@ def analyze_fmea(defects: Union[DefectExtractionResult, List[Dict]]) -> FMEAAnal
 
     task = Task(
         description=prompt,
-        expected_output="符合描述格式的 JSON 数组，包含 summary 字段",
+        expected_output="符合描述格式的 JSON 数组",
         agent=agent,
     )
 
@@ -500,20 +546,21 @@ def analyze_fmea(defects: Union[DefectExtractionResult, List[Dict]]) -> FMEAAnal
     # 可能 LLM 直接返回了数组，需要包装成 {"defects": ..., "summary": "..."}
     if isinstance(analysis_dict, list):
         analysis_dict = {"defects": analysis_dict, "summary": ""}
+    if not isinstance(analysis_dict, dict):
+        logger.error("FMEA 分析输出无法解析为字典，内容: %s", raw_text[:500])
+        analysis_dict = {"defects": [], "summary": ""}
     if "defects" not in analysis_dict and isinstance(analysis_dict, dict):
+        # 可能 LLM 只返回了一个缺陷对象
         analysis_dict = {"defects": [analysis_dict]}
 
-    # 提取缺陷列表与 summary
     raw_defects = analysis_dict.get("defects", [])
     summary = analysis_dict.get("summary", "")
 
     # 为每条缺陷注入 AP 和 review_required
     result_items = []
     for item_dict in raw_defects:
-        try:
-            item = FMEAItem(**item_dict)
-        except ValidationError as e:
-            logger.warning(f"跳过格式错误的缺陷项: {e}")
+        item = _process_defect_item(item_dict)
+        if item is None:
             continue
 
         # 计算 AP
@@ -528,6 +575,72 @@ def analyze_fmea(defects: Union[DefectExtractionResult, List[Dict]]) -> FMEAAnal
             item.review_required = False
 
         result_items.append(item)
+
+    # ── 修改：批量解析失败时，自动降级为单条 LLM 评估 ──
+    if not result_items:
+        logger.warning("批量 FMEA 解析无有效结果，自动降级为逐条评估...")
+        for idx, d in enumerate(scored, start=1):
+            # 为单条缺陷构建简化提示词
+            single_defect_lines = [defect_lines[idx-1]]
+            single_prompt = f"""
+你是承压设备 FMEA 评审专家。请根据以下单条缺陷信息及系统预评分，输出最终评分(JSON 对象)。
+你只需输出一个 JSON 对象，不要附加任何解释。
+
+规则：
+1. S（严重度）: 参考“深度/壁厚”比，裂纹可+2（上限10）。
+2. O（发生度）: 参考数量，腐蚀类可+1~2。
+3. D（检测度）: 参考尺寸，深度<1mm 可设为8-10。
+4. 风险等级按 RPN: 低(1-50)、中(51-100)、高(101-200)、严重(>200)。
+5. 对高风险缺陷给出简洁建议。
+
+缺陷信息：
+{single_defect_lines[0]}
+
+输出格式（严格 JSON 对象，不要用 Markdown 代码块）：
+{{
+  "id": {idx},
+  "defect_type": "...",
+  "original_text": "...",
+  "severity": <int>,
+  "occurrence": <int>,
+  "detection": <int>,
+  "rpn": <自动计算>,
+  "risk_level": "低/中/高/严重",
+  "reasons": "简短调整理由（不超过20字）",
+  "suggestion": "简短改进建议（不超过30字）"
+}}
+只输出一个 JSON 对象，不要包含任何其他内容。
+"""
+            single_task = Task(
+                description=single_prompt,
+                expected_output="符合描述格式的 JSON 对象",
+                agent=agent,
+            )
+            single_crew = Crew(
+                agents=[agent],
+                tasks=[single_task],
+                process=Process.sequential,
+                verbose=True,
+            )
+            try:
+                single_raw = single_crew.kickoff()
+                single_text = single_raw.raw if hasattr(single_raw, "raw") else str(single_raw)
+                single_dict = extract_json_robust(single_text)
+                if isinstance(single_dict, list):
+                    single_dict = single_dict[0] if single_dict else {}
+                if isinstance(single_dict, dict):
+                    item = _process_defect_item(single_dict)
+                    if item:
+                        item.ap = calculate_ap(item.severity, item.occurrence, item.detection)
+                        if item.rpn >= settings.HIGH_RISK_THRESHOLD:
+                            item.review_required = True
+                        elif settings.FORCE_SUSPEND_S9 and item.severity >= 9:
+                            item.review_required = True
+                        else:
+                            item.review_required = False
+                        result_items.append(item)
+            except Exception as e:
+                logger.error(f"单条缺陷评估失败: {e}")
 
     if not result_items:
         raise ParsingError("FMEA 分析后未生成任何有效缺陷记录")

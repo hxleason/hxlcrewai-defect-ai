@@ -1,0 +1,51 @@
+{
+  "version": "1.0",
+  "standard": "GB/T 30583-2026",
+  "groups": {
+    "Fe-1": {
+      "description": "碳素钢",
+      "materials": ["Q235B", "Q235C", "20#", "20G", "A105", "A106B"]
+    },
+    "Fe-3-1": {
+      "description": "低合金钢（Mn-Mo 系，可焊性好）",
+      "materials": ["Q345R", "16MnR", "16MnDR", "09MnNiDR"]
+    },
+    "Fe-4-1": {
+      "description": "低合金耐热钢（1Cr-0.5Mo）",
+      "materials": ["15CrMoR", "15CrMoG", "12CrMo", "13CrMo44"]
+    },
+    "Fe-4-2": {
+      "description": "低合金耐热钢（1.25Cr-0.5Mo，含 V）",
+      "materials": ["12Cr1MoV", "12Cr1MoVG", "13CrMoV9-10"]
+    },
+    "Fe-5A": {
+      "description": "低合金耐热钢（2.25Cr-1Mo）",
+      "materials": ["12Cr2Mo1R", "12Cr2Mo1", "10CrMo9-10"]
+    },
+    "Fe-5B-1": {
+      "description": "中合金耐热钢（5Cr-0.5Mo）",
+      "materials": ["1Cr5Mo", "15Cr5Mo", "A335-P5"]
+    },
+    "Fe-5B-2": {
+      "description": "马氏体耐热钢（9Cr-1Mo-V）",
+      "materials": ["10Cr9Mo1VNbN", "A335-P91", "A182-F91"]
+    },
+    "Fe-6": {
+      "description": "低温钢（3.5Ni）",
+      "materials": ["08Ni3DR", "3.5Ni"]
+    },
+    "Fe-7": {
+      "description": "奥氏体不锈钢",
+      "materials": ["S30408", "S30403", "S31608", "S31603", "S32168", "06Cr19Ni10", "022Cr17Ni12Mo2"]
+    },
+    "Fe-8": {
+      "description": "双相不锈钢",
+      "materials": ["S22053", "022Cr23Ni5Mo3N"]
+    },
+    "Fe-8-1": {
+      "description": "超级双相不锈钢",
+      "materials": ["S25073", "022Cr25Ni7Mo4N"]
+    }
+  },
+  "material_map": {}
+}

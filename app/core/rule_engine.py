@@ -1,5 +1,5 @@
 """
-动态 FMEA 规则引擎 —— 基于 rules.json 可配置 (v3.0 终极版)
+动态 FMEA 规则引擎 —— 基于 rules.json 可配置 (v3.1 修复版)
 
 特性：
 - 线程安全：单例创建、热重载均使用锁保护
@@ -8,6 +8,10 @@
   避免因数据不足而错误低估风险
 - 向后兼容：保留 rule_engine 全局变量，旧代码无需修改
 - 内置兜底规则：覆盖 裂纹/点蚀/气孔/夹杂 等常见缺陷
+
+修复记录：
+- v3.1: 修正 _match 中字段名不一致问题（depth_mm → depth, length_mm → length）
+        增强 _normalize_defect 对 dimensions 中键名兼容性（支持 depth/length 和 depth_mm/length_mm）
 """
 
 import os
@@ -96,9 +100,13 @@ class RuleEngine:
     def _normalize_defect(defect: Dict[str, Any]) -> Dict[str, Any]:
         """
         将缺陷字典转换为规则引擎可用的扁平格式。
-        1. 浅拷贝原始数据，保留所有字段。
-        2. 若顶层缺少 depth_mm / length_mm，则从 dimensions 子对象提取。
-        3. 对数值字段统一做 float 转换，失败则置为 None。
+        标准内部字段为:
+            - depth : 缺陷深度 (mm)
+            - length : 缺陷长度 (mm)
+            - wall_thickness : 设计壁厚 (mm)
+            - quantity : 数量
+            - type : 缺陷类型字符串
+        兼容旧版嵌套 dimensions 结构，及不同的键名 (depth_mm/length_mm 等)。
         """
         data = defect.copy()               # 保留所有原始字段，便于未来扩展
         dims = data.get("dimensions") or {}
@@ -113,23 +121,31 @@ class RuleEngine:
                 logger.debug(f"数值转换失败，忽略: {v}")
                 return None
 
-        # 深度、长度优先从顶层取，若无则从 dimensions 提取
-        for src_key, dest_key in [("depth_mm", "depth"), ("length_mm", "length")]:
-            if dest_key not in data or data[dest_key] is None:
-                val = dims.get(src_key) or defect.get(src_key)  # 注意 dimensions 内的键可能是 depth/length
-                if val is not None:
-                    data[dest_key] = _to_float(val)
-                else:
-                    data[dest_key] = None
-            else:
-                data[dest_key] = _to_float(data[dest_key])
+        # 深度、长度优先从顶层取，若无则从 dimensions 提取（支持多种键名）
+        # 标准键名：depth, length；兼容键名：depth_mm, length_mm
+        for standard_key, legacy_key in [("depth", "depth_mm"), ("length", "length_mm")]:
+            # 如果 data 中已有标准键且非 None，则直接转换
+            if data.get(standard_key) is not None:
+                data[standard_key] = _to_float(data[standard_key])
+                continue
+
+            # 否则尝试从 dims 中提取（先标准键，再旧键）
+            val = dims.get(standard_key)
+            if val is None:
+                val = dims.get(legacy_key)
+            # 如果 dims 中没有，则尝试从原 defect 的旧键提取
+            if val is None:
+                val = defect.get(standard_key)
+            if val is None:
+                val = defect.get(legacy_key)
+
+            data[standard_key] = _to_float(val)
 
         # 壁厚
-        if "wall_thickness" not in data or data["wall_thickness"] is None:
-            wt = dims.get("wall_thickness") or defect.get("wall_thickness")
-            data["wall_thickness"] = _to_float(wt)
-        else:
-            data["wall_thickness"] = _to_float(data["wall_thickness"])
+        wt = data.get("wall_thickness")
+        if wt is None:
+            wt = dims.get("wall_thickness", defect.get("wall_thickness"))
+        data["wall_thickness"] = _to_float(wt)
 
         # 数量始终为整数
         try:
@@ -196,6 +212,8 @@ class RuleEngine:
         判断规范化后的数据 data 是否满足一条规则的所有条件。
         关键安全策略：对于数值比较（depth_min 等），若所需字段为 None，
         则视为不满足，防止因数据缺失而错误触发低风险规则。
+
+        数据字段使用规范化后的标准名称：depth, length, wall_thickness, quantity, type。
         """
         for key, val in condition.items():
             if key == "type_contains":
@@ -208,12 +226,12 @@ class RuleEngine:
                         return False
 
             elif key == "depth_min":
-                d = data.get("depth_mm")
+                d = data.get("depth")          # 修复：使用规范化后的字段 depth
                 if d is None or not (d >= val):
                     return False
 
             elif key == "depth_wall_ratio_min":
-                d = data.get("depth_mm")
+                d = data.get("depth")          # 修复
                 w = data.get("wall_thickness")
                 if d is None or w is None or w <= 0:
                     return False
@@ -221,12 +239,12 @@ class RuleEngine:
                     return False
 
             elif key == "length_min":
-                l = data.get("length_mm")
+                l = data.get("length")         # 修复
                 if l is None or not (l >= val):
                     return False
 
             elif key == "length_max":
-                l = data.get("length_mm")
+                l = data.get("length")         # 修复
                 if l is None or not (l <= val):
                     return False
 

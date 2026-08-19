@@ -1,4 +1,5 @@
-from fastapi import Request, HTTPException
+from fastapi import Request
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 import os
 
@@ -15,7 +16,11 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
 
         api_key = request.headers.get("X-API-Key")
         if not api_key or api_key not in API_KEYS:
-            raise HTTPException(status_code=401, detail="Invalid or missing API Key")
+            # 关键修复：返回 JSONResponse 而不是 raise HTTPException
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Invalid or missing API Key"},
+            )
 
         # 注入用户身份，供后续端点使用
         request.state.user = "api_user"  # 可扩展为从 token 解析

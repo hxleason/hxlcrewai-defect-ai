@@ -1,11 +1,17 @@
 ﻿"""
-集中化配置中心（终极版 v4.2）
+集中化配置中心（终极版 v4.3）
 - 所有环境变量均可通过 .env 或系统环境注入，敏感信息严禁硬编码
 - 自动兼容旧变量名（如 LLM_MODEL_NAME → LLM_MODEL），并发出升级警告
 - 开发默认使用异步 SQLite，生产请务必通过环境变量切换为 PostgreSQL（asyncpg 等）
 - 统一所有数据路径到 PROJECT_ROOT/data 下，确保跨平台兼容
 - 包含风险管理相关阈值配置（HIGH_RISK_THRESHOLD、FORCE_SUSPEND_S9）
 - 新增：PWHT 焊后热处理标准知识库路径配置（data/pwht_kb）
+
+v4.3 变更说明（本次）：
+- LLM_MAX_TOKENS 默认提升至 16000，为推理模型预留充足输出预算。
+- 新增 LLM_ENABLE_THINKING 配置项，支持显式关闭推理（部分平台支持）。
+- 新增 LLM_MAX_RETRIES 与 LLM_RETRY_DELAY，统一控制 LLM 调用重试。
+- 新增模型兼容性验证器，确保 max_tokens 在合理范围内（4096~128000）。
 """
 import os
 import logging
@@ -49,7 +55,17 @@ class Settings(BaseSettings):
     LLM_BASE_URL: str = "https://api.deepseek.com/v1"
     LLM_API_KEY: str = ""
     LLM_TEMPERATURE: float = 0.1
-    LLM_MAX_TOKENS: int = 4000
+    # ★ v4.3：默认提升至 16000，适配推理模型的思考 token 消耗
+    LLM_MAX_TOKENS: int = 16000
+
+    # ★ v4.3 新增：是否允许模型内部推理（reasoning/thinking）
+    #   - True: 使用模型默认行为（推理模型会消耗额外 token 思考）
+    #   - False: 尝试关闭推理（仅当平台支持 enable_thinking=false 时生效）
+    LLM_ENABLE_THINKING: bool = True
+
+    # ★ v4.3 新增：LLM 调用异常时的最大重试次数（指数退避）
+    LLM_MAX_RETRIES: int = 3
+    LLM_RETRY_DELAY: float = 3.0   # 首次重试延迟（秒），后续每次翻倍
 
     # ========== 消息队列 & 缓存 ==========
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -113,6 +129,28 @@ class Settings(BaseSettings):
                 ", ".join(f'"{old}"' for old, _ in changed),
                 ", ".join(f'"{new}"' for _, new in changed),
             )
+        return self
+
+    # ── v4.3 新增：LLM 参数合理性校验 ──
+    @model_validator(mode="after")
+    def _validate_llm_params(self):
+        """确保 max_tokens 在合理范围，温度在 [0, 2] 区间。"""
+        if not (4096 <= self.LLM_MAX_TOKENS <= 128000):
+            logger.warning(
+                "⚠️ LLM_MAX_TOKENS=%s 超出合理范围 [4096, 128000]，"
+                "可能引发截断或 API 拒绝。建议设为 8000~32000。",
+                self.LLM_MAX_TOKENS,
+            )
+
+        if not (0.0 <= self.LLM_TEMPERATURE <= 2.0):
+            logger.warning(
+                "⚠️ LLM_TEMPERATURE=%s 超出 [0.0, 2.0]，将按 API 默认处理。",
+                self.LLM_TEMPERATURE,
+            )
+            self.LLM_TEMPERATURE = 0.1
+
+        if self.LLM_MAX_RETRIES < 0:
+            self.LLM_MAX_RETRIES = 0
         return self
 
 

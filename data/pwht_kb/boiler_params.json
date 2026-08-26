@@ -1,0 +1,395 @@
+{
+  "params": [
+    {
+      "material_group": "Fe-1-1",
+      "min_holding_temp_c": 600,
+      "max_holding_temp_c": 650,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-1-2",
+      "min_holding_temp_c": 600,
+      "max_holding_temp_c": 650,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-1-3",
+      "min_holding_temp_c": 600,
+      "max_holding_temp_c": 650,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-3-1",
+      "min_holding_temp_c": 620,
+      "max_holding_temp_c": 680,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-3-2",
+      "min_holding_temp_c": 620,
+      "max_holding_temp_c": 680,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-3-3",
+      "min_holding_temp_c": 620,
+      "max_holding_temp_c": 680,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-4-1",
+      "min_holding_temp_c": 620,
+      "max_holding_temp_c": 680,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-4-2",
+      "min_holding_temp_c": 650,
+      "max_holding_temp_c": 700,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-5A",
+      "min_holding_temp_c": 650,
+      "max_holding_temp_c": 700,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-5B-1",
+      "min_holding_temp_c": 650,
+      "max_holding_temp_c": 700,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-5B-2",
+      "min_holding_temp_c": 650,
+      "max_holding_temp_c": 760,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.5)",
+          "min_hours": 0.5
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.5
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.5
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.5
+        }
+      }
+    },
+    {
+      "material_group": "Fe-6",
+      "min_holding_temp_c": 620,
+      "max_holding_temp_c": 680,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-7",
+      "min_holding_temp_c": 600,
+      "max_holding_temp_c": 650,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-8",
+      "min_holding_temp_c": 600,
+      "max_holding_temp_c": 650,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-9B",
+      "min_holding_temp_c": 600,
+      "max_holding_temp_c": 650,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-10I",
+      "min_holding_temp_c": 600,
+      "max_holding_temp_c": 650,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    },
+    {
+      "material_group": "Fe-11A",
+      "min_holding_temp_c": 600,
+      "max_holding_temp_c": 650,
+      "holding_time_rules": {
+        "le_25mm": {
+          "formula": "max(δ/25, 0.25)",
+          "min_hours": 0.25
+        },
+        "gt_25_le_50mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_50_le_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        },
+        "gt_125mm": {
+          "formula": "2+(δ-50)/100",
+          "min_hours": 0.25
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "rules": [
+    {
+      "condition": "壁厚≤20mm",
+      "material_group": "Fe-1-1",
+      "equipment": "压力容器",
+      "exempt": true,
+      "note": "满足强度条件下的薄壁碳钢可免做PWHT"
+    },
+    {
+      "condition": "壁厚≤30mm",
+      "material_group": "Fe-1-1",
+      "equipment": "非承压构件",
+      "exempt": true,
+      "note": "非承压构件可放宽至30mm"
+    },
+    {
+      "condition": "补焊深度≤10mm",
+      "material_group": "任意",
+      "equipment": "各类承压设备",
+      "exempt": true,
+      "note": "浅层补焊通常无需PWHT，但碳当量CE≥0.45%时应做"
+    },
+    {
+      "condition": "奥氏体不锈钢常规模焊",
+      "material_group": "Fe-7",
+      "equipment": "压力容器",
+      "exempt": true,
+      "note": "奥氏体不锈钢通常不要求PWHT，必要时固溶处理"
+    }
+  ]
+}

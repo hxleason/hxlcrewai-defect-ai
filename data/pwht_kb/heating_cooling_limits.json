@@ -1,0 +1,20 @@
+{
+  "furnace_pwht": {
+    "entry_temp_max_c": 400,
+    "heating_rate": {
+      "above_400c": {
+        "formula": "6250/δ",
+        "max_rate": 220
+      }
+    },
+    "cooling_rate": {
+      "above_400c": {
+        "formula": "8000/δ",
+        "max_rate": 280
+      }
+    },
+    "temperature_uniformity": {
+      "soaking_period_max_diff_c": 80
+    }
+  }
+}

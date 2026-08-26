@@ -1,0 +1,18 @@
+{
+  "single_heating_local_pwht": {
+    "heating_band_width": {
+      "double_side_insulation": {
+        "formula": "W_HB ≥ 3√(Rδ)",
+        "factor": 3.0
+      },
+      "single_side_insulation": {
+        "formula": "W_HB ≥ 5√(Rδ)",
+        "factor": 5.0
+      }
+    },
+    "gradient_control_band_width": {
+      "description": "梯度控制带宽度取加热带宽度的2~3倍",
+      "factor": 2.5
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "rules": [
+    {
+      "condition": "对接接头",
+      "note": "等厚对接时δPWHT取较薄件厚度"
+    },
+    {
+      "condition": "角接接头",
+      "note": "角接接头δPWHT取焊缝计算厚度"
+    },
+    {
+      "condition": "非承压件与承压件连接",
+      "note": "δPWHT取承压件厚度"
+    },
+    {
+      "condition": "管座或接管",
+      "note": "δPWHT取管座或接管厚度"
+    }
+  ]
+}

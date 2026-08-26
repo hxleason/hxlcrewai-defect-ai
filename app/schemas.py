@@ -13,6 +13,7 @@ v7.0 更新：
   （与 defect_processor 中 search_regulation 返回的 join 字符串保持一致）
 - 保持向后兼容：新增字段均为 Optional，不影响旧数据
 - 继续保留 model_validator 的 type→defect_type 映射与 original_text 补全逻辑
+- 风险等级文字统一为四级：低风险 / 中风险 / 高风险 / 极高风险
 """
 
 from pydantic import BaseModel, Field, model_validator
@@ -128,7 +129,7 @@ class DefectUpdate(BaseModel):
     occurrence: Optional[int] = None
     detection: Optional[int] = None
     rpn: Optional[int] = None
-    risk_level: Optional[str] = None
+    risk_level: Optional[str] = Field(None, description="风险等级: 低/中/高/极高")
     level: Optional[int] = None
     reasons: Optional[List[str]] = None
     suggestion: Optional[str] = None
@@ -166,7 +167,7 @@ class DefectOut(DefectBase):
     occurrence: Optional[int] = None
     detection: Optional[int] = None
     rpn: Optional[int] = None
-    risk_level: Optional[str] = None
+    risk_level: Optional[str] = Field(None, description="风险等级: 低/中/高/极高")
     level: Optional[int] = None
     reasons: Optional[List[str]] = None
     suggestion: Optional[str] = None

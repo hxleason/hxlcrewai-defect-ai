@@ -1,5 +1,5 @@
 """
-app/core/utils.py – FMEA 核心工具函数（知识库增强版 v3.0）
+app/core/utils.py – FMEA 核心工具函数（知识库增强版 v3.2）
 
 提供：
     - fmea_calculator: 基于规则引擎 + 专家规则 + 案例库的缺陷风险评估
@@ -11,6 +11,12 @@ app/core/utils.py – FMEA 核心工具函数（知识库增强版 v3.0）
     - 专家规则根据缺陷特征动态调整 S/O/D，并记录规则应用情况。
     - 相似案例检索作为附加信息返回，供下游进一步分析或人工审核。
     - 所有输出字段完整，保证下游流水线不因缺失 key 而崩溃。
+
+v3.2 修复与增强：
+    - 壁厚字段名兼容：支持 wall_thickness / design_wall_thickness / nominal_thickness 等。
+    - 修复案例库数据存在 Ellipsis 等异常类型时导致 .lower() 报错的问题。
+    - 增加对案例库返回值的类型检查，确保可靠性。
+    - 相似案例检索增加更多字段容错。
 """
 
 import logging
@@ -26,8 +32,9 @@ logger = logging.getLogger("defect_fmea.utils")
 # ---------------------------------------------------------------------------
 # 知识库惰性加载（避免模块导入时因文件缺失导致崩溃）
 # ---------------------------------------------------------------------------
-_kb_instance = None  # 存储单例实例，若加载失败则标记为 False
+_kb_instance = None  # 存储单例实例，若加载失败则标记为 None
 _kb_attempted = False
+
 
 def _get_kb() -> Optional[KnowledgeBase]:
     """
@@ -47,22 +54,41 @@ def _get_kb() -> Optional[KnowledgeBase]:
 
 def _calculate_risk_level(rpn: int) -> Tuple[str, int]:
     """
-    根据 RPN 值计算风险等级文字描述和等级数值。
+    根据 RPN 值计算风险等级文字描述和等级数值（全系统统一四级）。
 
-    等级划分参考常用 FMEA 阈值：
-        RPN ≤ 50      -> 低风险 (level 1)
-        50 < RPN ≤ 100 -> 中风险 (level 2)
+    等级划分：
+        RPN ≤ 50      -> 低风险   (level 1)
+        50 < RPN ≤ 100 -> 中风险  (level 2)
         100 < RPN ≤ 200 -> 高风险 (level 3)
         RPN > 200      -> 极高风险 (level 4)
     """
-    if rpn <= 50:
-        return "低风险", 1
-    elif rpn <= 100:
-        return "中风险", 2
-    elif rpn <= 200:
-        return "高风险", 3
-    else:
+    if rpn > 200:
         return "极高风险", 4
+    elif rpn > 100:
+        return "高风险", 3
+    elif rpn > 50:
+        return "中风险", 2
+    else:
+        return "低风险", 1
+
+
+def _extract_wall_thickness_from_kwargs(kwargs: Dict[str, Any]) -> Optional[float]:
+    """
+    从 **kwargs 中提取壁厚值，支持多种常见字段名。
+    返回 None 表示未找到有效壁厚。
+    """
+    # 按优先级检查字段
+    candidates = ["wall_thickness", "design_wall_thickness", "nominal_thickness", "thickness"]
+    for key in candidates:
+        val = kwargs.get(key)
+        if val is not None:
+            try:
+                val_float = float(val)
+                if val_float > 0:
+                    return val_float
+            except (TypeError, ValueError):
+                continue
+    return None
 
 
 def fmea_calculator(
@@ -83,8 +109,8 @@ def fmea_calculator(
     """
     计算给定缺陷的 FMEA 风险值（S / O / D / RPN），并整合专家规则和案例库信息。
 
-    参数
-    ----
+    参数（同 v3.1 但增加壁厚字段兼容）：
+    ----------
     defect_type : str
         缺陷类型（如 "裂纹", "点蚀" 等）。
     length_mm : float or None
@@ -92,52 +118,66 @@ def fmea_calculator(
     depth_mm : float or None
         缺陷深度（mm），None 表示未测量。
     wall_thickness : float or None
-        构件设计壁厚（mm）。如果缺失，将尝试从案例库获取基准 S/O/D。
+        构件设计壁厚（mm）。如果为 None，会尝试从 **kwargs 中寻找备用壁厚字段。
     quantity : int
         同类缺陷数量（默认 1）。
-    media : str
-        充装/接触介质（如 "液氨", "氯"），用于专家规则匹配。
-    material : str
-        罐体/构件材质（如 "Q345R"），用于专家规则匹配。
-    device_type : str
-        设备类型或大类（如 "移动式压力容器"），用于专家规则匹配和案例检索。
-    environment : str
-        使用环境描述，用于案例检索。
-    operating_temperature : float or None
-        操作温度（℃），用于专家规则匹配（若规则中涉及）。
-    design_pressure : float or None
-        设计压力（MPa），用于专家规则匹配（若规则中涉及）。
-    location : str
-        缺陷位置描述，用于案例检索。
+    media, material, device_type, environment, operating_temperature, design_pressure, location
+        其他特征，用于专家规则匹配和案例检索。
+    **kwargs
+        额外参数，可能包含壁厚的备用字段或 features 字典。
 
     返回
     ----
     dict
         评估结果，包含以下字段：
-        - error : bool                是否发生致命错误
-        - message : str               错误或提示信息
-        - warning : Optional[str]     警告信息（如壁厚缺失）
-        - review_required : bool      是否需要人工审核（壁厚缺失时自动为 True）
-        - severity : int              调整后的严重度
-        - occurrence : int            调整后的发生度
-        - detection : int             调整后的检测度
-        - rpn : int                   最终风险优先数
-        - risk_level : str            风险等级文字
-        - level : int                 风险等级数值（1~4）
-        - standard_ref : str          参考标准或来源
-        - triggered_rules : List      命中的基础规则和专家规则编号列表
-        - rule_applications : List    专家规则应用详情（含调整量）
-        - similar_cases : List        相似案例列表（含案例详情和相似度）
-        - similar_case_ids : List     相似案例 ID 列表
-        - similar_case_measures : List 相似案例中的措施建议列表（扁平化）
-        - base_source : str           基础 S/O/D 来源（"rule_engine" 或 "case_baseline"）
-        - source_case : Optional[str] 若使用案例基线，则为参考案例 ID，否则为 None
+        - error : bool
+        - message : str
+        - warning : Optional[str]
+        - review_required : bool
+        - severity / occurrence / detection : int
+        - rpn : int
+        - risk_level : str
+        - level : int
+        - standard_ref : str
+        - triggered_rules : List
+        - rule_applications : List
+        - similar_cases : List
+        - similar_case_ids : List
+        - similar_case_measures : List
+        - base_source : str
+        - source_case : Optional[str]
     """
     logger.debug("FMEA 评估输入: %s", {
         "defect_type": defect_type, "length_mm": length_mm, "depth_mm": depth_mm,
         "wall_thickness": wall_thickness, "quantity": quantity, "media": media,
         "material": material, "device_type": device_type, "environment": environment,
+        "extra_kwargs": {k: v for k, v in kwargs.items() if k != "features"}
     })
+
+    # ------------------------------------------------------------------
+    # 0. 壁厚兼容性处理：若 wall_thickness 未提供或无效，尝试从 kwargs 中提取
+    # ------------------------------------------------------------------
+    if wall_thickness is None or wall_thickness <= 0:
+        # 1) 检查 kwargs 是否直接包含备用壁厚字段
+        backup_thickness = _extract_wall_thickness_from_kwargs(kwargs)
+        if backup_thickness is not None:
+            logger.info("从 **kwargs 中解析到备用壁厚: %s", backup_thickness)
+            wall_thickness = backup_thickness
+        else:
+            # 2) 检查 kwargs 是否包含 'features' 字典（内部含壁厚）
+            features_arg = kwargs.get("features")
+            if isinstance(features_arg, dict):
+                for key in ["wall_thickness", "design_wall_thickness", "nominal_thickness", "thickness"]:
+                    val = features_arg.get(key)
+                    if val is not None:
+                        try:
+                            val_float = float(val)
+                            if val_float > 0:
+                                logger.info("从 features 字典中解析到壁厚: %s", val_float)
+                                wall_thickness = val_float
+                                break
+                        except (TypeError, ValueError):
+                            continue
 
     # ------------------------------------------------------------------
     # 1. 获取基础 S/O/D 和相关信息
@@ -246,6 +286,12 @@ def fmea_calculator(
                 device_class=device_type,
                 failure_mode=defect_type,
             )
+            # 防御性检查：确保获取到的是数值类型，且不能为 None 或非正数
+            avg_s = float(avg_s) if isinstance(avg_s, (int, float)) and avg_s > 0 else None
+            avg_o = float(avg_o) if isinstance(avg_o, (int, float)) and avg_o > 0 else None
+            avg_d = float(avg_d) if isinstance(avg_d, (int, float)) and avg_d > 0 else None
+            if avg_s is None or avg_o is None or avg_d is None:
+                raise ValueError("案例库返回的 S/O/D 无效")
         except Exception as e:
             logger.error("从案例库获取基准 S/O/D 失败: %s", e)
             avg_s = avg_o = avg_d = None
@@ -272,7 +318,7 @@ def fmea_calculator(
                 "source_case": None,
             }
 
-        base_s, base_o, base_d = avg_s, avg_o, avg_d
+        base_s, base_o, base_d = int(avg_s), int(avg_o), int(avg_d)
         base_source = "case_baseline"
         source_case = "相似案例平均基准"  # 可进一步细化
         standard_ref = "基于案例库统计平均值"
@@ -314,14 +360,32 @@ def fmea_calculator(
 
     if kb is not None:
         try:
-            similar_cases = kb.search_similar_cases(features, top_k=5)
-            similar_case_ids = [item["case_id"] for item in similar_cases]
-            similar_case_measures = [
-                measure
-                for item in similar_cases
-                for measure in item["measures"]
-            ]
-            # 去重措施（保持顺序）
+            raw_cases = kb.search_similar_cases(features, top_k=5)
+            # 确保 raw_cases 是列表
+            if not isinstance(raw_cases, list):
+                raw_cases = []
+            for item in raw_cases:
+                # 防御性提取，确保 item 是字典且包含必要字段
+                if not isinstance(item, dict):
+                    continue
+                case_id = item.get("case_id", "未知案例")
+                case_detail = item.get("case", {})
+                similarity = item.get("similarity", 0.0)
+                measures = item.get("measures", [])
+                if not isinstance(measures, list):
+                    measures = []
+                similar_cases.append({
+                    "case_id": case_id,
+                    "similarity": similarity,
+                    "case_detail": case_detail,
+                    "measures": measures,
+                })
+                similar_case_ids.append(case_id)
+                # 收集措施（仅字符串）
+                for measure in measures:
+                    if isinstance(measure, str) and measure.strip():
+                        similar_case_measures.append(measure.strip())
+            # 去重措施
             similar_case_measures = list(dict.fromkeys(similar_case_measures))
         except Exception as e:
             logger.error("相似案例检索失败: %s", e, exc_info=True)
@@ -451,11 +515,9 @@ def diagnosis_reasons(defect_type: str = "", **kwargs) -> List[str]:
 
     # 按关键字长度降序匹配，避免短关键字提前命中
     reasons: List[str] = []
-    matched_key = None
     for key in sorted(reason_mapping.keys(), key=len, reverse=True):
         if key in defect_type:
             reasons.extend(reason_mapping[key])
-            matched_key = key
             break
 
     # ------------------------------------------------------------------
@@ -472,15 +534,18 @@ def diagnosis_reasons(defect_type: str = "", **kwargs) -> List[str]:
 
         try:
             similar = kb.search_similar_cases(search_features, top_k=3)
-            for item in similar:
-                case = item["case"]
-                # 提取案例中可能的根因字段（根据实际案例库字段名调整）
-                root_cause_fields = ["root_cause", "failure_cause", "cause", "reason"]
-                for field in root_cause_fields:
-                    if field in case and isinstance(case[field], str):
-                        cause_text = case[field].strip()
-                        if cause_text and cause_text not in reasons:
-                            reasons.append(cause_text)
+            if isinstance(similar, list):
+                for item in similar:
+                    if not isinstance(item, dict):
+                        continue
+                    case = item.get("case", item)  # 兼容不同返回结构
+                    # 提取案例中可能的根因字段（根据实际案例库字段名调整）
+                    root_cause_fields = ["root_cause", "failure_cause", "cause", "reason"]
+                    for field in root_cause_fields:
+                        if field in case and isinstance(case[field], str):
+                            cause_text = case[field].strip()
+                            if cause_text and cause_text not in reasons:
+                                reasons.append(cause_text)
         except Exception as e:
             logger.debug("案例根因提取失败: %s", e)
 

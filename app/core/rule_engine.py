@@ -1,5 +1,5 @@
 """
-动态 FMEA 规则引擎 —— 基于 rules.json 可配置 (v3.1 修复版)
+动态 FMEA 规则引擎 —— 基于 rules.json 可配置 (v5.0 终极版)
 
 特性：
 - 线程安全：单例创建、热重载均使用锁保护
@@ -11,7 +11,13 @@
 
 修复记录：
 - v3.1: 修正 _match 中字段名不一致问题（depth_mm → depth, length_mm → length）
-        增强 _normalize_defect 对 dimensions 中键名兼容性（支持 depth/length 和 depth_mm/length_mm）
+        增强 _normalize_defect 对 dimensions 中键名兼容性
+- v4.0: 修复 _normalize_defect 未将 defect_type 映射为 type 的问题；
+        修正 DET_BASE 规则顺序，防止无条件规则覆盖特定规则；
+        triggered_rules 只返回规则 ID 列表
+- v5.0: 新增 _sort_rules_for_evaluation 排序逻辑，确保无条件规则始终
+        先于有条件规则触发，无论规则文件如何排布；
+        防止 DET_BASE/OCC_BASE/SEV_BASE 等无条件规则覆盖特定规则
 """
 
 import os
@@ -20,7 +26,7 @@ import logging
 import threading
 from typing import Any, Dict, List, Optional
 
-from app.core.config import RULES_PATH   # 请确保配置文件正确导出该路径
+from app.core.config import RULES_PATH
 
 logger = logging.getLogger("defect_fmea.rule_engine")
 
@@ -36,6 +42,7 @@ class RuleEngine:
 
     # ------------------- 规则加载 -------------------
     def load_rules(self) -> None:
+        """加载规则（非线程安全，仅在初始化或单线程环境调用）。"""
         new_rules = self._load_rules_from_source()
         self.rules = new_rules
         logger.info(f"规则已加载，当前规则总数：{len(self.rules)}")
@@ -72,9 +79,18 @@ class RuleEngine:
     # ------------------- 默认规则集（兜底） -------------------
     @staticmethod
     def _default_rules() -> List[Dict[str, Any]]:
+        """
+        默认规则集。
+        注意：排序由 _sort_rules_for_evaluation 统一保证，
+        此处顺序仅作为最终兜底。
+        """
         return [
-            # 严重度 Severity
+            # ========== 默认基线（无条件规则，排序后自动前置） ==========
             {"rule_id": "SEV_BASE", "description": "默认严重度", "condition": {}, "effect": {"severity": 3}, "source": "默认值"},
+            {"rule_id": "OCC_BASE", "description": "默认发生度", "condition": {}, "effect": {"occurrence": 4}, "source": "默认"},
+            {"rule_id": "DET_BASE", "description": "默认检出度", "condition": {}, "effect": {"detection": 4}, "source": "默认"},
+
+            # ========== 严重度 Severity ==========
             {"rule_id": "SEV_CRACK", "description": "裂纹基础严重度", "condition": {"type_contains": "裂纹"}, "effect": {"severity": 4}, "source": "经验规则"},
             {"rule_id": "SEV_CRACK_D2", "description": "裂纹深度≥2mm", "condition": {"type_contains": "裂纹", "depth_min": 2.0}, "effect": {"severity": 5}, "source": "经验规则"},
             {"rule_id": "SEV_CRACK_R03", "description": "裂纹深度/壁厚≥0.3", "condition": {"type_contains": "裂纹", "depth_wall_ratio_min": 0.3}, "effect": {"severity": 7}, "source": "GB/T 19624-2019"},
@@ -84,16 +100,30 @@ class RuleEngine:
             {"rule_id": "SEV_PITTING_R05", "description": "点蚀深度/壁厚≥0.5", "condition": {"type_contains": ["点蚀", "腐蚀"], "depth_wall_ratio_min": 0.5}, "effect": {"severity": 8}, "source": "API 579"},
             {"rule_id": "SEV_POROSITY_S", "description": "气孔/夹杂长度≤10mm", "condition": {"type_contains": ["气孔", "夹杂"], "length_max": 10}, "effect": {"severity": 3}, "source": "经验规则"},
             {"rule_id": "SEV_POROSITY_L", "description": "气孔/夹杂长度>10mm", "condition": {"type_contains": ["气孔", "夹杂"], "length_min": 10}, "effect": {"severity": 5}, "source": "经验规则"},
-            # 发生度 Occurrence
-            {"rule_id": "OCC_BASE", "condition": {}, "effect": {"occurrence": 4}, "source": "默认"},
-            {"rule_id": "OCC_Q1", "condition": {"quantity_eq": 1}, "effect": {"occurrence": 3}, "source": "默认"},
-            {"rule_id": "OCC_Q3", "condition": {"quantity_min": 3}, "effect": {"occurrence": 5}, "source": "默认"},
-            {"rule_id": "OCC_Q5", "condition": {"quantity_min": 5}, "effect": {"occurrence": 7}, "source": "默认"},
-            # 检出度 Detection
-            {"rule_id": "DET_CRACK", "condition": {"type_contains": "裂纹"}, "effect": {"detection": 6}, "source": "默认"},
-            {"rule_id": "DET_PITTING", "condition": {"type_contains": ["点蚀", "腐蚀"]}, "effect": {"detection": 5}, "source": "默认"},
-            {"rule_id": "DET_BASE", "condition": {}, "effect": {"detection": 4}, "source": "默认"},
+
+            # ========== 发生度 Occurrence ==========
+            {"rule_id": "OCC_Q1", "description": "数量=1", "condition": {"quantity_eq": 1}, "effect": {"occurrence": 3}, "source": "默认"},
+            {"rule_id": "OCC_Q3", "description": "数量≥3", "condition": {"quantity_min": 3}, "effect": {"occurrence": 5}, "source": "默认"},
+            {"rule_id": "OCC_Q5", "description": "数量≥5", "condition": {"quantity_min": 5}, "effect": {"occurrence": 7}, "source": "默认"},
+
+            # ========== 检出度 Detection ==========
+            {"rule_id": "DET_CRACK", "description": "裂纹检出度", "condition": {"type_contains": "裂纹"}, "effect": {"detection": 6}, "source": "默认"},
+            {"rule_id": "DET_PITTING", "description": "点蚀/腐蚀检出度", "condition": {"type_contains": ["点蚀", "腐蚀"]}, "effect": {"detection": 5}, "source": "默认"},
         ]
+
+    # ------------------- 规则排序（v5.0 新增） -------------------
+    @staticmethod
+    def _sort_rules_for_evaluation(rules: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        确保无条件规则（condition 为空或 {}）排在特定规则之前。
+        这样 DET_BASE 先赋值，DET_CRACK 再覆盖；
+        否则无条件规则会覆盖掉条件更具体的规则。
+
+        无论 rules.json 文件中的规则如何排布，此方法都强制保证正确顺序。
+        """
+        unconditional = [r for r in rules if not r.get("condition")]
+        conditional = [r for r in rules if r.get("condition")]
+        return unconditional + conditional
 
     # ------------------- 数据规范化 -------------------
     @staticmethod
@@ -101,17 +131,25 @@ class RuleEngine:
         """
         将缺陷字典转换为规则引擎可用的扁平格式。
         标准内部字段为:
-            - depth : 缺陷深度 (mm)
-            - length : 缺陷长度 (mm)
+            - type      : 缺陷类型字符串
+            - depth     : 缺陷深度 (mm)
+            - length    : 缺陷长度 (mm)
             - wall_thickness : 设计壁厚 (mm)
-            - quantity : 数量
-            - type : 缺陷类型字符串
+            - quantity  : 数量
+
         兼容旧版嵌套 dimensions 结构，及不同的键名 (depth_mm/length_mm 等)。
+        兼容缺陷类型字段名：type 或 defect_type。
         """
-        data = defect.copy()               # 保留所有原始字段，便于未来扩展
+        data = defect.copy()
         dims = data.get("dimensions") or {}
 
-        # 辅助函数：将任意值转为 float 或 None
+        # 缺陷类型标准化：支持 type 或 defect_type 两种键名
+        if data.get("type") is None:
+            data["type"] = data.get("defect_type", "")
+        if not isinstance(data["type"], str):
+            data["type"] = str(data.get("type", ""))
+
+        # 数值转换辅助函数
         def _to_float(v):
             if v is None:
                 return None
@@ -121,19 +159,15 @@ class RuleEngine:
                 logger.debug(f"数值转换失败，忽略: {v}")
                 return None
 
-        # 深度、长度优先从顶层取，若无则从 dimensions 提取（支持多种键名）
-        # 标准键名：depth, length；兼容键名：depth_mm, length_mm
+        # 深度、长度：优先顶层，其次 dimensions，再兼容旧键
         for standard_key, legacy_key in [("depth", "depth_mm"), ("length", "length_mm")]:
-            # 如果 data 中已有标准键且非 None，则直接转换
             if data.get(standard_key) is not None:
                 data[standard_key] = _to_float(data[standard_key])
                 continue
 
-            # 否则尝试从 dims 中提取（先标准键，再旧键）
             val = dims.get(standard_key)
             if val is None:
                 val = dims.get(legacy_key)
-            # 如果 dims 中没有，则尝试从原 defect 的旧键提取
             if val is None:
                 val = defect.get(standard_key)
             if val is None:
@@ -160,11 +194,12 @@ class RuleEngine:
         """
         对单条缺陷执行 FMEA 评分。
         - 内部先调用 _normalize_defect 处理数据结构。
-        - 使用当前规则的快照，热重载不影响本次评估。
+        - 使用排序后的规则快照，保证无条件规则先触发。
         - 缺失关键数值的规则会被安全跳过（保守原则）。
         """
         data = self._normalize_defect(defect)
-        current_rules = self.rules          # 快照引用
+        # v5.0：排序保证无条件规则（SEV_BASE/OCC_BASE/DET_BASE）先触发
+        current_rules = self._sort_rules_for_evaluation(self.rules)
         s, o, d = 1, 1, 1
         triggered = []
 
@@ -226,12 +261,12 @@ class RuleEngine:
                         return False
 
             elif key == "depth_min":
-                d = data.get("depth")          # 修复：使用规范化后的字段 depth
+                d = data.get("depth")
                 if d is None or not (d >= val):
                     return False
 
             elif key == "depth_wall_ratio_min":
-                d = data.get("depth")          # 修复
+                d = data.get("depth")
                 w = data.get("wall_thickness")
                 if d is None or w is None or w <= 0:
                     return False
@@ -239,12 +274,12 @@ class RuleEngine:
                     return False
 
             elif key == "length_min":
-                l = data.get("length")         # 修复
+                l = data.get("length")
                 if l is None or not (l >= val):
                     return False
 
             elif key == "length_max":
-                l = data.get("length")         # 修复
+                l = data.get("length")
                 if l is None or not (l <= val):
                     return False
 
@@ -258,28 +293,28 @@ class RuleEngine:
                 if not (q == val):
                     return False
 
-            # 可在此继续扩展其他条件类型（如 location_contains 等）
-            # 注意：未定义的条件将直接返回 True，请谨慎使用
         return True
 
     # ------------------- RPN → 风险等级 -------------------
     @staticmethod
     def _rpn_to_level(rpn: int) -> int:
-        if rpn >= 200: return 4
-        if rpn >= 100: return 3
-        if rpn >= 50:  return 2
+        if rpn > 200:
+            return 4
+        if rpn > 100:
+            return 3
+        if rpn > 50:
+            return 2
         return 1
 
     _level_map = {
-        4: "高风险",
-        3: "中风险",
-        2: "低风险",
-        1: "可忽略",
+        4: "极高风险",
+        3: "高风险",
+        2: "中风险",
+        1: "低风险",
     }
 
 
 # ================== 全局单例 ==================
-# 模块导入时自动创建（Python import 锁保证线程安全）
 rule_engine = RuleEngine()
 
 

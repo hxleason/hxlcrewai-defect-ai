@@ -1,0 +1,24 @@
+{
+  "rules": [
+    {
+      "under_min_temp_by_c": 10,
+      "compensation_min": 10
+    },
+    {
+      "under_min_temp_by_c": 20,
+      "compensation_min": 20
+    },
+    {
+      "under_min_temp_by_c": 30,
+      "compensation_min": 30
+    },
+    {
+      "under_min_temp_by_c": 50,
+      "compensation_min": 50
+    },
+    {
+      "under_min_temp_by_c": 100,
+      "compensation_min": 100
+    }
+  ]
+}

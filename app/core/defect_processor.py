@@ -1,10 +1,29 @@
 """
-app/core/defect_processor.py – 缺陷处理工具（v7.0 终极版 · PWHT 修复工艺指导）
+app/core/defect_processor.py – 缺陷处理工具（v7.4 集成版 · LLM 上下文自动生成）
 
 完全剥离 LLM 调用逻辑，所有提取/评估/审计函数均为纯 Python 实现，
 可由 Celery 安全并行调用。
+v7.4 新增：
+- 在 audit_one_defect 结果中自动生成 llm_context 字段，
+  整合缺陷全量信息（含相似案例措施），供上层直接接入大模型提示词。
 
-关键改进 (v7.0)：
+关键改进 (v7.3)：
+- 在 evaluate_one_defect 评估阶段即生成 PWHT 修复工艺建议。
+  缺陷被判定为高风险而进入人工审核挂起时，audit 阶段尚未执行，
+  提前生成建议可确保审核人员能够获取修复工艺指导。
+- 保留 audit_one_defect 中的 PWHT 生成逻辑作为兜底（若评估阶段未生成）。
+
+v7.2 历史功能（保留）：
+- 修复 audit_one_defect 中风险等级字符串映射：适配全系统统一的四级风险等级
+  （低=1，中=2，高=3，极高=4），解决高风险缺陷被错误分配等级的问题。
+- 清理未使用的导入，修正注释中的 PVHT -> PWHT。
+
+v7.1 历史功能（保留）：
+- 新增缺陷类型归一化（normalize_defect_type），将 "表面裂纹"、"内部裂纹" 等
+  别名统一映射为标准类型（如 "裂纹"），避免同一缺陷因表述不同被重复评估。
+- 修复模块自测时缺少 `import json` 的运行时错误。
+
+v7.0 历史功能（保留）：
 - audit_one_defect 新增 PWHT（焊后热处理）修复工艺建议，基于
   GB/T 30583-2026 标准知识库，自动匹配材料组别并推荐：
     · 最低/最高保温温度
@@ -24,15 +43,67 @@ v6.0 历史功能（保留）：
 - audit_one_defect 主动检索相似案例，提取措施建议合并至输出。
 """
 
+import json
 import logging
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 
-from app.crews import create_analysis_crew  # 新版 crews.extract_defects 的别名
+# ⚠️ 注意：此处不导入 app.crews，避免与 crews.py 产生循环依赖。
+# 需要在 extract_defects 函数内部延迟导入（见函数实现）。
+# from app.crews import create_analysis_crew  # 已移除顶层导入
+
 from app.core.utils import fmea_calculator, diagnosis_reasons
 from app.core.regulation import search_regulation
 from app.core.knowledge_base import get_knowledge_base
 
 logger = logging.getLogger(__name__)
+
+# ══════════════════════════════════════════════════════════════════════
+# 缺陷类型归一化（v7.1 新增）
+# ══════════════════════════════════════════════════════════════════════
+DEFECT_TYPE_ALIASES: Dict[str, str] = {
+    # ── 裂纹类 ──
+    "表面裂纹": "裂纹",
+    "内部裂纹": "裂纹",
+    "纵向裂纹": "裂纹",
+    "环向裂纹": "裂纹",
+    "横向裂纹": "裂纹",
+    "表面裂缝": "裂纹",
+    "微裂纹": "裂纹",
+    "龟裂": "裂纹",
+    # ── 腐蚀类 ──
+    "腐蚀减薄": "腐蚀",
+    "均匀腐蚀": "腐蚀",
+    "局部腐蚀": "腐蚀",
+    "点腐蚀": "点蚀",
+    "点状腐蚀": "点蚀",
+    # ── 气孔类 ──
+    "密集气孔": "气孔",
+    "单个气孔": "气孔",
+    "表面气孔": "气孔",
+    # ── 夹杂类 ──
+    "非金属夹杂": "夹杂",
+    "夹渣": "夹杂",
+    # ── 未熔合/未焊透类 ──
+    "未焊透": "未焊透",
+    "未熔合": "未熔合",
+}
+
+
+def normalize_defect_type(raw_type: str) -> str:
+    """
+    将 LLM 提取的缺陷类型字符串归一化为标准类型名称。
+
+    规则：
+      1. 去除首尾空白；
+      2. 若在别名表中存在精确匹配，则返回标准名；
+      3. 否则返回原字符串（避免信息丢失）。
+    """
+    if not raw_type:
+        return "未知缺陷"
+
+    cleaned = raw_type.strip()
+    return DEFECT_TYPE_ALIASES.get(cleaned, cleaned)
+
 
 # ══════════════════════════════════════════════════════════════════════
 # PWHT 知识库惰性加载
@@ -253,6 +324,7 @@ def _normalize_defect_dict(raw: Dict[str, Any]) -> Dict[str, Any]:
     """
     将 crews 提取的原始缺陷字典转换为下游函数统一使用的格式：
       - 'defect_type' → 'type'（规则引擎期望的字段名）
+      - 应用缺陷类型归一化（表面裂纹 → 裂纹）
       - 保留顶层 length / depth / wall_thickness / quantity 等字段
       - 若原始数据存在嵌套的 'dimensions' 对象（旧版兼容），则自动展平
     """
@@ -263,6 +335,9 @@ def _normalize_defect_dict(raw: Dict[str, Any]) -> Dict[str, Any]:
         defect["type"] = defect.pop("defect_type")
     # 若都没有，设默认值
     defect.setdefault("type", "未知缺陷")
+
+    # ★ v7.1 新增：缺陷类型归一化（如 "表面裂纹" → "裂纹"）
+    defect["type"] = normalize_defect_type(defect["type"])
 
     # 2. 兼容旧版 dimensions 嵌套结构（如果存在）
     dims = defect.get("dimensions")
@@ -514,6 +589,102 @@ def _get_pwht_repair_advice(
 
 
 # ══════════════════════════════════════════════════════════════════════
+# 新增：构建 LLM 上下文字符串（v7.4）
+# ══════════════════════════════════════════════════════════════════════
+def build_llm_context(defect_data: Dict[str, Any]) -> str:
+    """
+    将缺陷结果字典（通常是 audit_one_defect 的输出）格式化为
+    可直接嵌入大模型提示词的综合上下文文本。
+
+    该文本涵盖：
+      - 缺陷基本信息（类型、位置、尺寸等）
+      - FMEA 评级（RPN、风险等级）
+      - 失效原因
+      - 法规要求与强制措施
+      - 检验建议
+      - 相似案例整改措施（重点整合）
+      - PWHT 建议（若有）
+
+    Args:
+        defect_data: 包含完整评估与审计结果的缺陷字典。
+
+    Returns:
+        str: 多段文本，可直接插入 prompt。
+    """
+    def _fmt_value(val, prefix=""):
+        if val is None or val == "":
+            return "无"
+        if isinstance(val, list):
+            if not val:
+                return "无"
+            return "\n".join(f"{prefix}- {item}" for item in val)
+        return str(val)
+
+    lines = []
+    lines.append("【缺陷基本信息】")
+    lines.append(f"类型：{defect_data.get('type', '未知')}")
+    lines.append(f"位置：{defect_data.get('location', '未知')}")
+    lines.append(f"尺寸：长 {defect_data.get('length', '?')} mm，深 {defect_data.get('depth', '?')} mm")
+    lines.append(f"壁厚：{defect_data.get('wall_thickness', '?')} mm")
+    lines.append(f"数量：{defect_data.get('quantity', 1)}")
+    lines.append(f"介质：{defect_data.get('media', '未知')}")
+    lines.append(f"材质：{defect_data.get('material', '未知')}")
+
+    lines.append("\n【风险评估】")
+    lines.append(f"RPN：{defect_data.get('rpn', '无')}")
+    lines.append(f"风险等级：{defect_data.get('risk_level', '未知')} (level={defect_data.get('level', '?')})")
+
+    lines.append("\n【失效原因分析】")
+    reasons = defect_data.get('reasons', [])
+    if reasons:
+        for idx, reason in enumerate(reasons, 1):
+            lines.append(f"{idx}. {reason}")
+    else:
+        lines.append("无")
+
+    lines.append("\n【法规与强制措施】")
+    lines.append(f"法规引用：{_fmt_value(defect_data.get('law_references'))}")
+    lines.append(f"强制措施：{_fmt_value(defect_data.get('mandatory_measures'))}")
+    lines.append(f"检验建议：{_fmt_value(defect_data.get('inspection_advice'))}")
+
+    lines.append("\n【同类事故案例整改措施】")
+    measures = defect_data.get('similar_case_measures', [])
+    if measures:
+        for measure in measures:
+            lines.append(f"- {measure}")
+    else:
+        lines.append("无")
+
+    pwht = defect_data.get('pwht_advice')
+    if pwht:
+        lines.append("\n【PWHT 修复工艺建议】")
+        if pwht.get('applicable', False):
+            lines.append(f"材料：{pwht.get('material', '')}")
+            lines.append(f"材料组别：{pwht.get('material_group', '')}")
+            lines.append(f"最低保温温度：{pwht.get('min_holding_temp_c', '无')} °C")
+            lines.append(f"最高保温温度：{pwht.get('max_holding_temp_c', '无')} °C")
+            lines.append(f"最短保温时间：{pwht.get('min_holding_time_h', '无')} h")
+            if 'delta_pwht_mm' in pwht:
+                lines.append(f"δPWHT：{pwht['delta_pwht_mm']} mm")
+            if pwht.get('heating_rate_max_c_per_h'):
+                lines.append(f"升温速率上限：{pwht['heating_rate_max_c_per_h']} °C/h")
+            if pwht.get('cooling_rate_max_c_per_h'):
+                lines.append(f"降温速率上限：{pwht['cooling_rate_max_c_per_h']} °C/h")
+            if pwht.get('special_requirements'):
+                lines.append("特殊要求：")
+                for req in pwht['special_requirements']:
+                    lines.append(f"  - {req.get('title', '')}: {req.get('note', '')[:100]}")
+            if pwht.get('notes'):
+                lines.append("备注：")
+                for note in pwht['notes']:
+                    lines.append(f"  - {note}")
+        else:
+            lines.append(f"不适用（{pwht.get('warning', '') or pwht.get('error', '')}）")
+
+    return "\n".join(lines)
+
+
+# ══════════════════════════════════════════════════════════════════════
 # 公共接口
 # ══════════════════════════════════════════════════════════════════════
 def extract_defects(input_text: str) -> List[Dict[str, Any]]:
@@ -526,6 +697,9 @@ def extract_defects(input_text: str) -> List[Dict[str, Any]]:
         ParsingError: 当 LLM 输出无法通过 schema 校验时。
         LLMTimeoutError / LLMAPIError: 当 LLM 接口调用失败时。
     """
+    # ★ 延迟导入，避免与 crews.py 的循环依赖
+    from app.crews import create_analysis_crew
+
     # 调用新版 extract_defects（已在 crews 中通过 output_pydantic 强制校验）
     pydantic_result = create_analysis_crew(input_text)       # -> DefectExtractionResult
     raw_defects = pydantic_result.defects                    # List[DefectBase]
@@ -534,7 +708,7 @@ def extract_defects(input_text: str) -> List[Dict[str, Any]]:
         logger.info("提取结果：未发现任何缺陷。")
         return []
 
-    # 转为字典并规范字段
+    # 转为字典并规范字段（含类型归一化）
     normalized = []
     for item in raw_defects:
         d = _normalize_defect_dict(item.model_dump())
@@ -552,11 +726,14 @@ def evaluate_one_defect(defect: Dict[str, Any]) -> Dict[str, Any]:
     'depth'、'wall_thickness' 以及介质、材质等上下文字段。若字段缺失，
     规则引擎与知识库将采用保守策略（壁厚缺失时尝试案例库降级）。
 
+    v7.3 新增：评估阶段即生成 PWHT 修复工艺建议（若适用），
+    确保高风险缺陷被迫挂起人工审核时，审核人员也能获取建议。
+
     Returns:
         dict : 原始缺陷信息 + fmea 评分 (severity, occurrence, detection, rpn,
                risk_level, level, triggered_rules, rule_applications,
                similar_cases, similar_case_ids, similar_case_measures 等)
-               + reasons
+               + reasons + pwht_advice（若适用，否则为 null）
     """
     # 确保基础字段
     defect = _normalize_defect_dict(defect)   # 二次保险（幂等）
@@ -600,10 +777,22 @@ def evaluate_one_defect(defect: Dict[str, Any]) -> Dict[str, Any]:
                                 device_type=device_type, environment=environment,
                                 location=location)
 
+    # ★ v7.3 新增：在评估阶段提前生成 PWHT 修复工艺建议
+    pwht_advice = None
+    try:
+        level_num = fmea_result.get("level")
+        if level_num is not None:
+            pwht_advice = _get_pwht_repair_advice(defect, int(level_num))
+    except Exception as e:
+        logger.error("评估阶段 PWHT 建议生成失败: %s，跳过。", e)
+        pwht_advice = None
+
     # 合并结果（fmea_result 中的字段覆盖原始字段，例如 severity 等）
-    combined = {**defect, **fmea_result, "reasons": reasons}
-    logger.info("缺陷评估完成: id=%s, RPN=%s, risk_level=%s",
-                defect.get("id"), fmea_result.get("rpn"), fmea_result.get("risk_level"))
+    combined = {**defect, **fmea_result, "reasons": reasons, "pwht_advice": pwht_advice}
+    logger.info("缺陷评估完成: id=%s, RPN=%s, risk_level=%s, pwht_advice=%s",
+                defect.get("id"), fmea_result.get("rpn"),
+                fmea_result.get("risk_level"),
+                "已生成" if pwht_advice else "未生成")
     return combined
 
 
@@ -618,12 +807,17 @@ def audit_one_defect(defect: Dict[str, Any]) -> Dict[str, Any]:
     v7.0 新增：对于焊接类缺陷（裂纹、气孔、夹渣、未焊透、未熔合等），
     自动生成 PWHT（焊后热处理）修复工艺建议，包含推荐保温温度、
     最短保温时间、升降温速率限值及特殊材料要求。
+    （若评估阶段已生成建议，则审计阶段将重新生成以确保最新数据有效性）
+
+    v7.4 新增：在结果中添加 llm_context 字段，整合全部信息，
+    可直接用于大模型生成综合评估报告。
 
     Returns:
         dict : 原始缺陷字典 + law_references / mandatory_measures / inspection_advice
                + similar_case_measures（可能重复，若已存在于缺陷中则覆盖）
                + similar_cases / similar_case_ids 等（若之前未生成）
                + pwht_advice（v7.0 新增，不适用时为 None）
+               + llm_context（v7.4 新增，格式化文本）
     """
     defect = _normalize_defect_dict(defect)   # 确保字段一致
 
@@ -635,14 +829,16 @@ def audit_one_defect(defect: Dict[str, Any]) -> Dict[str, Any]:
     level_num = defect.get("level")            # rule_engine 输出的数值等级
     if level_num is None:
         risk_str = defect.get("risk_level", "")
-        # 简易映射 (与 rule_engine.RPN_LEVELS 对应：可忽略=1,低=2,中=3,高=4)
-        if "高" in risk_str or "严重" in risk_str:
+        # ★ v7.2 修正：适配全系统统一的四级风险等级
+        #   低=1，中=2，高=3，极高=4
+        #   注意：必须先判断“极高”，避免被“高”抢先匹配
+        if "极高" in risk_str or "严重" in risk_str:
             level_num = 4
-        elif "中" in risk_str:
+        elif "高" in risk_str:
             level_num = 3
-        elif "低" in risk_str:
+        elif "中" in risk_str:
             level_num = 2
-        elif "可忽略" in risk_str:
+        elif "低" in risk_str:
             level_num = 1
         else:
             level_num = 0   # 无法识别
@@ -695,6 +891,7 @@ def audit_one_defect(defect: Dict[str, Any]) -> Dict[str, Any]:
 
     # ------------------------------------------------------------------
     # 4. PWHT 修复工艺建议（v7.0 新增）
+    #    注：评估阶段可能已生成；此处重新生成以保证结果最新。
     # ------------------------------------------------------------------
     pwht_advice = None
     try:
@@ -724,6 +921,9 @@ def audit_one_defect(defect: Dict[str, Any]) -> Dict[str, Any]:
     # v7.0 新增：PWHT 修复工艺建议
     result["pwht_advice"] = pwht_advice
 
+    # ★ v7.4 新增：构建 LLM 上下文字符串
+    result["llm_context"] = build_llm_context(result)
+
     return result
 
 
@@ -734,7 +934,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     print("=" * 60)
-    print("缺陷处理器 v7.0 自测")
+    print("缺陷处理器 v7.4 自测")
     print("=" * 60)
 
     # ── 测试 1：材料映射 ──
@@ -750,8 +950,15 @@ if __name__ == "__main__":
     for t in test_types:
         print(f"  {t:10s} → 焊接修复类: {_is_weld_repair_defect(t)}")
 
-    # ── 测试 3：PWHT 参数建议 ──
-    print("\n── 测试 3：PWHT 建议生成 ──")
+    # ── 测试 3：缺陷类型归一化 ──
+    print("\n── 测试 3：缺陷类型归一化 ──")
+    test_raw_types = ["表面裂纹", "内部裂纹", "点腐蚀", "密集气孔", "夹渣", "未知类型"]
+    for t in test_raw_types:
+        norm = normalize_defect_type(t)
+        print(f"  {t:10s} → {norm}")
+
+    # ── 测试 4：PWHT 参数建议 ──
+    print("\n── 测试 4：PWHT 建议生成 ──")
     test_defect = {
         "id": 1,
         "type": "裂纹",
@@ -760,7 +967,7 @@ if __name__ == "__main__":
         "length": 50.0,
         "depth": 2.0,
         "level": 3,
-        "risk_level": "中风险",
+        "risk_level": "高风险",  # 注意：四级体系中 level=3 对应高风险
         "quantity": 1,
         "media": "",
         "device_type": "",
@@ -770,3 +977,37 @@ if __name__ == "__main__":
     }
     advice = _get_pwht_repair_advice(test_defect, 3)
     print(json.dumps(advice, ensure_ascii=False, indent=2) if advice else "  无建议")
+
+    # ── 测试 5：LLM 上下文生成 ──
+    print("\n── 测试 5：LLM 上下文生成 ──")
+    sample_result = {
+        "type": "裂纹",
+        "location": "筒体环焊缝",
+        "length": 50.0,
+        "depth": 2.0,
+        "wall_thickness": 30.0,
+        "quantity": 1,
+        "media": "天然气",
+        "material": "Q345R",
+        "rpn": 120,
+        "risk_level": "高风险",
+        "level": 3,
+        "reasons": ["焊接残余应力集中", "材料韧性不足"],
+        "law_references": "TSG 21-2016 第4.2.3条",
+        "mandatory_measures": "立即停止使用，进行修复",
+        "inspection_advice": "建议进行超声检测",
+        "similar_case_measures": ["打磨消除裂纹后补焊", "进行焊后热处理"],
+        "pwht_advice": {
+            "applicable": True,
+            "material": "Q345R",
+            "material_group": "Fe-3-1",
+            "min_holding_temp_c": 600,
+            "max_holding_temp_c": 650,
+            "min_holding_time_h": 1.2,
+            "delta_pwht_mm": 30.0,
+            "heating_rate_max_c_per_h": 50,
+            "cooling_rate_max_c_per_h": 60,
+        },
+    }
+    context = build_llm_context(sample_result)
+    print(context)

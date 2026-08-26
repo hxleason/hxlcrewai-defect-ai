@@ -1,0 +1,46 @@
+{
+  "rules": [
+    {
+      "material_group": "Fe-5B-2",
+      "title": "9Cr马氏体耐热钢附加要求",
+      "section": "GB/T 30583-2026 第4.4.15 e)条",
+      "requirements": "PWHT 后应立即进行冷弯检验；焊缝金属 Nb+V 含量应满足规定；建议最高保温温度 760℃"
+    },
+    {
+      "material_group": "Fe-9B",
+      "title": "双相不锈钢附加要求",
+      "section": "GB/T 30583-2026 第4.4.15 f)条",
+      "requirements": "PWHT 应避免在 450-950℃ 长时间停留；升降温速率应严格控制；PWHT 后应进行铁素体含量测量"
+    },
+    {
+      "material_group": "Fe-10I",
+      "title": "超级铁素体不锈钢附加要求",
+      "section": "GB/T 30583-2026 第4.4.15 f)条",
+      "requirements": "PWHT 温度下限应≥650℃；冷却速率应缓慢进行"
+    },
+    {
+      "material_group": "Fe-11A",
+      "title": "镍基合金附加要求",
+      "section": "GB/T 30583-2026 第4.4.15 g)条",
+      "requirements": "PWHT 温度范围应根据具体合金确定；应避免在敏感温度区间长期停留"
+    },
+    {
+      "material_group": "Fe-6",
+      "title": "铁素体不锈钢附加要求",
+      "section": "GB/T 30583-2026 第4.4.15 f)条",
+      "requirements": "关注冷却速率和防脆化要求"
+    },
+    {
+      "material_group": "Fe-7",
+      "title": "奥氏体不锈钢附加要求",
+      "section": "GB/T 30583-2026 第4.4.15 f)条",
+      "requirements": "通常不要求PWHT；必要时进行固溶处理"
+    },
+    {
+      "material_group": "Fe-8",
+      "title": "奥氏体不锈钢(316系列)附加要求",
+      "section": "GB/T 30583-2026 第4.4.15 f)条",
+      "requirements": "通常不要求PWHT；必要时进行固溶处理"
+    }
+  ]
+}

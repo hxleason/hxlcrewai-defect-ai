@@ -11,6 +11,9 @@
       "failure_consequence": "若继续使用可能导致容器失效",
       "risk_level": "极高风险",
       "corrective_measures": "安全状况等级为5级，应当对缺陷进行处理，否则不得继续使用",
+      "measures": [
+        "安全状况等级为5级，应当对缺陷进行处理，否则不得继续使用"
+      ],
       "severity": 9,
       "occurrence": 5,
       "detection": 3,
@@ -30,6 +33,9 @@
       "failure_consequence": "可能导致焊缝开裂失效",
       "risk_level": "高风险",
       "corrective_measures": "应按GB/T 19624-2019进行断裂与塑性失效评定",
+      "measures": [
+        "应按GB/T 19624-2019进行断裂与塑性失效评定"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -49,6 +55,9 @@
       "failure_consequence": "爆炸事故，人员伤亡",
       "risk_level": "极高风险",
       "corrective_measures": "完善安全联锁装置，严格执行操作规程，余压未释放严禁开门",
+      "measures": [
+        "完善安全联锁装置，严格执行操作规程，余压未释放严禁开门"
+      ],
       "severity": 9,
       "occurrence": 6,
       "detection": 3,
@@ -68,6 +77,9 @@
       "failure_consequence": "锅炉爆炸",
       "risk_level": "极高风险",
       "corrective_measures": "严格执行焊接工艺规程，补焊后必须进行无损检测（MT/UT）合格方可投入使用",
+      "measures": [
+        "严格执行焊接工艺规程，补焊后必须进行无损检测（MT/UT）合格方可投入使用"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 4,
@@ -87,6 +99,9 @@
       "failure_consequence": "锅炉整体炸裂，3人伤亡，房屋倒塌",
       "risk_level": "极高风险",
       "corrective_measures": "司炉工必须持证上岗并全程监控，定期校验安全附件",
+      "measures": [
+        "司炉工必须持证上岗并全程监控，定期校验安全附件"
+      ],
       "severity": 10,
       "occurrence": 4,
       "detection": 3,
@@ -106,6 +121,9 @@
       "failure_consequence": "设备爆破，可能造成重大人员伤亡",
       "risk_level": "极高风险",
       "corrective_measures": "加强尿素合成塔定期检验，重点检查内衬和层板",
+      "measures": [
+        "加强尿素合成塔定期检验，重点检查内衬和层板"
+      ],
       "severity": 10,
       "occurrence": 3,
       "detection": 4,
@@ -125,6 +143,9 @@
       "failure_consequence": "设备严重损伤，被迫更换失效筒节",
       "risk_level": "极高风险",
       "corrective_measures": "纠正选材错误，严格控制运行负荷，加强湿硫化氢环境下的定期检验",
+      "measures": [
+        "纠正选材错误，严格控制运行负荷，加强湿硫化氢环境下的定期检验"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 4,
@@ -144,6 +165,9 @@
       "failure_consequence": "蒸汽发生器失效",
       "risk_level": "高风险",
       "corrective_measures": "改善管子贴胀质量，控制炉水加药",
+      "measures": [
+        "改善管子贴胀质量，控制炉水加药"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -163,6 +187,9 @@
       "failure_consequence": "蒸汽发生器早期失效",
       "risk_level": "高风险",
       "corrective_measures": "改进焊接工艺，采用正确的焊接工艺（预热+后热）",
+      "measures": [
+        "改进焊接工艺，采用正确的焊接工艺（预热+后热）"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -182,6 +209,9 @@
       "failure_consequence": "爆炸事故",
       "risk_level": "极高风险",
       "corrective_measures": "提高制造精度，加强运行监测，定期检查啮合面磨损情况",
+      "measures": [
+        "提高制造精度，加强运行监测，定期检查啮合面磨损情况"
+      ],
       "severity": 9,
       "occurrence": 5,
       "detection": 4,
@@ -201,6 +231,9 @@
       "failure_consequence": "爆炸事故",
       "risk_level": "极高风险",
       "corrective_measures": "严格执行操作规程，确保压力完全释放后方可开门",
+      "measures": [
+        "严格执行操作规程，确保压力完全释放后方可开门"
+      ],
       "severity": 9,
       "occurrence": 6,
       "detection": 3,
@@ -220,6 +253,9 @@
       "failure_consequence": "爆炸事故",
       "risk_level": "极高风险",
       "corrective_measures": "改进釜盖限制转动机构设计，完善安全联锁装置",
+      "measures": [
+        "改进釜盖限制转动机构设计，完善安全联锁装置"
+      ],
       "severity": 9,
       "occurrence": 5,
       "detection": 4,
@@ -239,6 +275,9 @@
       "failure_consequence": "锅筒内蒸汽大量喷出",
       "risk_level": "高风险",
       "corrective_measures": "严格执行锅炉水质管理制度，加强水质检测，使用符合标准的防垢剂",
+      "measures": [
+        "严格执行锅炉水质管理制度，加强水质检测，使用符合标准的防垢剂"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -258,6 +297,9 @@
       "failure_consequence": "锅炉漏水，非计划停运",
       "risk_level": "高风险",
       "corrective_measures": "加强锅炉运行监控，调整燃烧器，定期清除水垢",
+      "measures": [
+        "加强锅炉运行监控，调整燃烧器，定期清除水垢"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -277,6 +319,9 @@
       "failure_consequence": "1人死亡",
       "risk_level": "极高风险",
       "corrective_measures": "加强锅炉受热面管定期检测，完善设计防磨措施",
+      "measures": [
+        "加强锅炉受热面管定期检测，完善设计防磨措施"
+      ],
       "severity": 10,
       "occurrence": 4,
       "detection": 3,
@@ -296,6 +341,9 @@
       "failure_consequence": "超压保护可能失效",
       "risk_level": "高风险",
       "corrective_measures": "爆破片超过规定使用期限的应立即更换",
+      "measures": [
+        "爆破片超过规定使用期限的应立即更换"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 5,
@@ -315,6 +363,9 @@
       "failure_consequence": "需评定后确定能否继续使用",
       "risk_level": "高风险",
       "corrective_measures": "达到设计使用年限的压力容器，应委托有检验资质的机构进行检验，必要时进行安全评估",
+      "measures": [
+        "达到设计使用年限的压力容器，应委托有检验资质的机构进行检验，必要时进行安全评估"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -334,6 +385,9 @@
       "failure_consequence": "材料性能未经验证",
       "risk_level": "高风险",
       "corrective_measures": "应按TSG 21-2016第2.1.3.1条要求经型式试验机构验证并出具报告",
+      "measures": [
+        "应按TSG 21-2016第2.1.3.1条要求经型式试验机构验证并出具报告"
+      ],
       "severity": 8,
       "occurrence": 3,
       "detection": 5,
@@ -353,6 +407,9 @@
       "failure_consequence": "壁厚减薄可能导致强度不足",
       "risk_level": "高风险",
       "corrective_measures": "应按GB/T 30579-2022腐蚀减薄类别进行损伤模式识别",
+      "measures": [
+        "应按GB/T 30579-2022腐蚀减薄类别进行损伤模式识别"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -372,6 +429,9 @@
       "failure_consequence": "可能导致设备开裂失效",
       "risk_level": "高风险",
       "corrective_measures": "应按GB/T 30579-2022环境开裂类别进行损伤模式识别",
+      "measures": [
+        "应按GB/T 30579-2022环境开裂类别进行损伤模式识别"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -391,6 +451,9 @@
       "failure_consequence": "失效可能性增加",
       "risk_level": "高风险",
       "corrective_measures": "应按GB/T 26610.4-2022附录D确定应力腐蚀开裂次因子",
+      "measures": [
+        "应按GB/T 26610.4-2022附录D确定应力腐蚀开裂次因子"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -410,6 +473,9 @@
       "failure_consequence": "材料性能劣化",
       "risk_level": "高风险",
       "corrective_measures": "应按GB/T 26610.4-2022附录E确定高温氢腐蚀次因子",
+      "measures": [
+        "应按GB/T 26610.4-2022附录E确定高温氢腐蚀次因子"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -429,6 +495,9 @@
       "failure_consequence": "蒸汽发生器失效",
       "risk_level": "高风险",
       "corrective_measures": "减小温差交变应力，控制腐蚀介质",
+      "measures": [
+        "减小温差交变应力，控制腐蚀介质"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -448,6 +517,9 @@
       "failure_consequence": "锅炉承压部件失效",
       "risk_level": "中高风险",
       "corrective_measures": "加强焊接质量控制，严格执行焊接工艺规程",
+      "measures": [
+        "加强焊接质量控制，严格执行焊接工艺规程"
+      ],
       "severity": 7,
       "occurrence": 6,
       "detection": 3,
@@ -467,6 +539,9 @@
       "failure_consequence": "介质泄漏，装置停车",
       "risk_level": "高风险",
       "corrective_measures": "优化焊接工艺降低残余应力，控制运行介质中Cl⁻含量",
+      "measures": [
+        "优化焊接工艺降低残余应力，控制运行介质中Cl⁻含量"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -486,6 +561,9 @@
       "failure_consequence": "介质泄漏",
       "risk_level": "高风险",
       "corrective_measures": "优化异种钢焊接工艺，焊后严格执行无损检测",
+      "measures": [
+        "优化异种钢焊接工艺，焊后严格执行无损检测"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -505,6 +583,10 @@
       "failure_consequence": "球罐存在安全隐患",
       "risk_level": "高风险",
       "corrective_measures": "监控使用一年，定期复查鼓包发展情况；探索氢鼓包防治措施",
+      "measures": [
+        "监控使用一年，定期复查鼓包发展情况",
+        "探索氢鼓包防治措施"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -524,6 +606,9 @@
       "failure_consequence": "设备失效，生产安全风险增大",
       "risk_level": "高风险",
       "corrective_measures": "分析氢鼓包产生原因，采取针对性防范措施（控制H₂S含量、优化材质、控制使用时间等）",
+      "measures": [
+        "分析氢鼓包产生原因，采取针对性防范措施（控制H₂S含量、优化材质、控制使用时间等）"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -543,6 +628,9 @@
       "failure_consequence": "设备存在应力腐蚀开裂风险",
       "risk_level": "高风险",
       "corrective_measures": "根据主导损伤模式提出缺陷修复和后期定期检验建议",
+      "measures": [
+        "根据主导损伤模式提出缺陷修复和后期定期检验建议"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -562,6 +650,9 @@
       "failure_consequence": "设备损伤累积可能导致事故",
       "risk_level": "中高风险",
       "corrective_measures": "加强小微企业压力容器定期检验和维护保养",
+      "measures": [
+        "加强小微企业压力容器定期检验和维护保养"
+      ],
       "severity": 7,
       "occurrence": 6,
       "detection": 4,
@@ -581,6 +672,9 @@
       "failure_consequence": "5人轻伤，设备严重损坏",
       "risk_level": "极高风险",
       "corrective_measures": "改进釜盖限制转动机构设计，采用限位楔块配合安全插销及电气控制",
+      "measures": [
+        "改进釜盖限制转动机构设计，采用限位楔块配合安全插销及电气控制"
+      ],
       "severity": 9,
       "occurrence": 5,
       "detection": 4,
@@ -600,6 +694,9 @@
       "failure_consequence": "1人死亡",
       "risk_level": "极高风险",
       "corrective_measures": "快开门安全联锁装置不合格必须整改后方可使用，操作人员必须持证上岗",
+      "measures": [
+        "快开门安全联锁装置不合格必须整改后方可使用，操作人员必须持证上岗"
+      ],
       "severity": 9,
       "occurrence": 6,
       "detection": 3,
@@ -619,6 +716,9 @@
       "failure_consequence": "锅炉爆炸，锅壳上封头飞出88.23m",
       "risk_level": "极高风险",
       "corrective_measures": "锅炉重大修理须由有资质单位执行，补焊后必须进行无损检测合格方可投入使用",
+      "measures": [
+        "锅炉重大修理须由有资质单位执行，补焊后必须进行无损检测合格方可投入使用"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 4,
@@ -638,6 +738,9 @@
       "failure_consequence": "爆炸事故",
       "risk_level": "极高风险",
       "corrective_measures": "开发栓销式安全联锁装置，有效预防快开门在运行时发生转动",
+      "measures": [
+        "开发栓销式安全联锁装置，有效预防快开门在运行时发生转动"
+      ],
       "severity": 9,
       "occurrence": 5,
       "detection": 4,
@@ -657,6 +760,9 @@
       "failure_consequence": "锅炉非计划停运",
       "risk_level": "高风险",
       "corrective_measures": "重视高应力部位和膨胀间隙排查，加强同类结构检修检查，合理安排水压试验查漏",
+      "measures": [
+        "重视高应力部位和膨胀间隙排查，加强同类结构检修检查，合理安排水压试验查漏"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 3,
@@ -676,6 +782,9 @@
       "failure_consequence": "锅炉非计划停运",
       "risk_level": "高风险",
       "corrective_measures": "加强燃烧调整，加强设备清洁度管理，加强启停机温升/温降速率控制，对材质做进一步评估",
+      "measures": [
+        "加强燃烧调整，加强设备清洁度管理，加强启停机温升/温降速率控制，对材质做进一步评估"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 3,
@@ -695,6 +804,9 @@
       "failure_consequence": "锅炉非计划停运",
       "risk_level": "中高风险",
       "corrective_measures": "高参数机组加强异种钢接头钢检抽查，加强锅炉水压检漏工作，加强焊接施工质量与过程监督",
+      "measures": [
+        "高参数机组加强异种钢接头钢检抽查，加强锅炉水压检漏工作，加强焊接施工质量与过程监督"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 3,
@@ -714,6 +826,9 @@
       "failure_consequence": "1人死亡",
       "risk_level": "极高风险",
       "corrective_measures": "快开门安全联锁装置不合格必须整改，操作人员必须持证上岗，余压未释放严禁开门",
+      "measures": [
+        "快开门安全联锁装置不合格必须整改，操作人员必须持证上岗，余压未释放严禁开门"
+      ],
       "severity": 9,
       "occurrence": 6,
       "detection": 3,
@@ -733,6 +848,9 @@
       "failure_consequence": "锅炉爆炸",
       "risk_level": "极高风险",
       "corrective_measures": "锅炉修理必须使用与原锅炉材质相匹配的合格材料，焊接工作应由持相应项目的焊工完成",
+      "measures": [
+        "锅炉修理必须使用与原锅炉材质相匹配的合格材料，焊接工作应由持相应项目的焊工完成"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 4,
@@ -752,6 +870,9 @@
       "failure_consequence": "爆炸事故",
       "risk_level": "极高风险",
       "corrective_measures": "提高制造精度，加强运行监测，定期检查啮合面磨损情况",
+      "measures": [
+        "提高制造精度，加强运行监测，定期检查啮合面磨损情况"
+      ],
       "severity": 9,
       "occurrence": 5,
       "detection": 4,
@@ -771,6 +892,10 @@
       "failure_consequence": "强度校核不合格，筒体剩余厚度不具备足够强度",
       "risk_level": "高风险",
       "corrective_measures": "严格把控涂层质量（专职质检、漆膜厚度仪实时检测）；加强使用过程管理（全生命周期检查台账、优化运输路线规避高腐蚀环境）",
+      "measures": [
+        "严格把控涂层质量（专职质检、漆膜厚度仪实时检测）",
+        "加强使用过程管理（全生命周期检查台账、优化运输路线规避高腐蚀环境）"
+      ],
       "severity": 8,
       "occurrence": 6,
       "detection": 3,
@@ -790,6 +915,9 @@
       "failure_consequence": "裂纹扩展可能导致蒸汽冷凝液泄漏",
       "risk_level": "中风险",
       "corrective_measures": "打磨消除裂纹，凹坑在允许范围内不影响定级（TSG 21-2016第8.5.4条）",
+      "measures": [
+        "打磨消除裂纹，凹坑在允许范围内不影响定级（TSG 21-2016第8.5.4条）"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -809,6 +937,10 @@
       "failure_consequence": "裂纹穿透致设备泄漏",
       "risk_level": "高风险",
       "corrective_measures": "水压试验中严格控制介质中Cl⁻含量；设备储存和运输过程中采用充氮保护",
+      "measures": [
+        "水压试验中严格控制介质中Cl⁻含量",
+        "设备储存和运输过程中采用充氮保护"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 4,
@@ -828,6 +960,10 @@
       "failure_consequence": "韧性储备不足，在残余应力和工作载荷下裂纹脆性快速扩展",
       "risk_level": "高风险",
       "corrective_measures": "加强奥氏体不锈钢类材料验收，成型后硬度指标严格监控；固溶处理必须按标准工艺执行",
+      "measures": [
+        "加强奥氏体不锈钢类材料验收，成型后硬度指标严格监控",
+        "固溶处理必须按标准工艺执行"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -847,6 +983,9 @@
       "failure_consequence": "不影响允许载荷循环次数，可继续使用",
       "risk_level": "中风险",
       "corrective_measures": "采用应力分析法评定，判定局部减薄不影响容器安全使用",
+      "measures": [
+        "采用应力分析法评定，判定局部减薄不影响容器安全使用"
+      ],
       "severity": 6,
       "occurrence": 5,
       "detection": 4,
@@ -866,6 +1005,10 @@
       "failure_consequence": "缺陷已不满足继续使用要求，需立即修理",
       "risk_level": "高风险",
       "corrective_measures": "打磨消除+焊接+焊后热处理：焊前预热100~150℃，焊条E5015-E（350℃烘干1h），后热250~300℃至少1h；水压试验1.03MPa，气密性0.805MPa",
+      "measures": [
+        "打磨消除+焊接+焊后热处理：焊前预热100~150℃，焊条E5015-E（350℃烘干1h），后热250~300℃至少1h",
+        "水压试验1.03MPa，气密性0.805MPa"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -885,6 +1028,12 @@
       "failure_consequence": "频繁泄漏",
       "risk_level": "中高风险",
       "corrective_measures": "检查类似工况管道外表面防腐涂层完整性；对腐蚀严重部位重新除锈刷漆；采用涡流扫检或导波检测等手段深度检测；保温层拼接缝朝上部位修正",
+      "measures": [
+        "检查类似工况管道外表面防腐涂层完整性",
+        "对腐蚀严重部位重新除锈刷漆",
+        "采用涡流扫检或导波检测等手段深度检测",
+        "保温层拼接缝朝上部位修正"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 3,
@@ -904,6 +1053,10 @@
       "failure_consequence": "壁厚减薄需更换筒体",
       "risk_level": "中高风险",
       "corrective_measures": "更换部分筒体：J507焊条（烘干300~350℃保温2h），V型坡口钝边2~3mm，氩弧焊打底100%MT I级，UT 100%Ⅱ级，MT 100%I级；水压试验管程14.35MPa、壳程1.58MPa",
+      "measures": [
+        "更换部分筒体：J507焊条（烘干300~350℃保温2h），V型坡口钝边2~3mm，氩弧焊打底100%MT I级，UT 100%Ⅱ级，MT 100%I级",
+        "水压试验管程14.35MPa、壳程1.58MPa"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 3,
@@ -923,6 +1076,12 @@
       "failure_consequence": "频繁泄漏",
       "risk_level": "中高风险",
       "corrective_measures": "检查同类管道外防腐层完整性；腐蚀严重部位除锈刷漆；涡流扫检或导波深度检测；修正保温层接缝方向",
+      "measures": [
+        "检查同类管道外防腐层完整性",
+        "腐蚀严重部位除锈刷漆",
+        "涡流扫检或导波深度检测",
+        "修正保温层接缝方向"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 3,
@@ -942,6 +1101,11 @@
       "failure_consequence": "设备失效",
       "risk_level": "中高风险",
       "corrective_measures": "正确开盖操作；定期安全检查维护；尽量避免超期使用，如需使用应开展安全评估",
+      "measures": [
+        "正确开盖操作",
+        "定期安全检查维护",
+        "尽量避免超期使用，如需使用应开展安全评估"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -961,6 +1125,12 @@
       "failure_consequence": "裂纹扩展导致失效",
       "risk_level": "高风险",
       "corrective_measures": "制造单位严格按GB150及NB/T47013控制焊接工艺；啮合齿根部补焊确保焊接质量；焊后热处理+无损检测；使用单位避免过快升降压",
+      "measures": [
+        "制造单位严格按GB150及NB/T47013控制焊接工艺",
+        "啮合齿根部补焊确保焊接质量",
+        "焊后热处理+无损检测",
+        "使用单位避免过快升降压"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -980,6 +1150,13 @@
       "failure_consequence": "机械密封泄漏",
       "risk_level": "中高风险",
       "corrective_measures": "改为双端面集装式机械密封；增加动环定位销；增加四氟迷宫密封+两道V形圈（有限元验证可行）；改进机架增加轴承支点；增加联轴器",
+      "measures": [
+        "改为双端面集装式机械密封",
+        "增加动环定位销",
+        "增加四氟迷宫密封+两道V形圈（有限元验证可行）",
+        "改进机架增加轴承支点",
+        "增加联轴器"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -999,6 +1176,12 @@
       "failure_consequence": "频繁失效，生产中断",
       "risk_level": "高风险",
       "corrective_measures": "改用四丙氟橡胶O形圈（耐230℃+碱+高温水蒸气）；四氟带包覆处理静环；机封冷却水改用去离子水；平衡罐自动补压",
+      "measures": [
+        "改用四丙氟橡胶O形圈（耐230℃+碱+高温水蒸气）",
+        "四氟带包覆处理静环",
+        "机封冷却水改用去离子水",
+        "平衡罐自动补压"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -1018,6 +1201,9 @@
       "failure_consequence": "物料泄漏",
       "risk_level": "高风险",
       "corrective_measures": "定期检查保温层并做好隔绝措施，防止外界水污染，尽可能使螺栓孔保持干燥",
+      "measures": [
+        "定期检查保温层并做好隔绝措施，防止外界水污染，尽可能使螺栓孔保持干燥"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -1037,6 +1223,13 @@
       "failure_consequence": "轴封失效，产品质量波动",
       "risk_level": "高风险",
       "corrective_measures": "提高轴密封处光洁度（高频处理+粗精磨）；改用全氟醚橡胶密封；改用全合成润滑油并定期在线更新；调整密封液与润滑油流体压力平衡；控制油温50~75℃、油压0.2~0.3MPa",
+      "measures": [
+        "提高轴密封处光洁度（高频处理+粗精磨）",
+        "改用全氟醚橡胶密封",
+        "改用全合成润滑油并定期在线更新",
+        "调整密封液与润滑油流体压力平衡",
+        "控制油温50~75℃、油压0.2~0.3MPa"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -1056,6 +1249,14 @@
       "failure_consequence": "机械密封泄漏",
       "risk_level": "高风险",
       "corrective_measures": "控制密封液温度45~50℃；定期加注润滑脂；建议改造：增设节流环降低大气侧受载；改为面对面布置；密封环均改用碳化硅；改用PLAN53C冲洗系统实现压力随动",
+      "measures": [
+        "控制密封液温度45~50℃",
+        "定期加注润滑脂",
+        "建议改造：增设节流环降低大气侧受载",
+        "改为面对面布置",
+        "密封环均改用碳化硅",
+        "改用PLAN53C冲洗系统实现压力随动"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -1075,6 +1276,13 @@
       "failure_consequence": "设备失效，经济损失和安全事故",
       "risk_level": "高风险",
       "corrective_measures": "基于光纤光栅传感器的实时监测技术；采用高铬不锈钢、镍钼合金、复合涂层、多层金属结构；优化壁厚分布和焊接工艺；冗余设计；多级应急处置机制",
+      "measures": [
+        "基于光纤光栅传感器的实时监测技术",
+        "采用高铬不锈钢、镍钼合金、复合涂层、多层金属结构",
+        "优化壁厚分布和焊接工艺",
+        "冗余设计",
+        "多级应急处置机制"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -1094,6 +1302,9 @@
       "failure_consequence": "爆炸致1人死亡，设备全毁",
       "risk_level": "高风险",
       "corrective_measures": "只允许采用压扁方式对气瓶进行消除使用功能处理，防止报废气瓶流入市场后被改造使用",
+      "measures": [
+        "只允许采用压扁方式对气瓶进行消除使用功能处理，防止报废气瓶流入市场后被改造使用"
+      ],
       "severity": 10,
       "occurrence": 4,
       "detection": 3,
@@ -1113,6 +1324,14 @@
       "failure_consequence": "储罐泄漏，非计划停机",
       "risk_level": "高风险",
       "corrective_measures": "选用-196℃冲击韧性≥100J的9Ni钢；焊缝避开应力集中区域；热喷涂铝/锌涂层（厚度150~250μm，防腐15~20年）；阴极保护（镁合金牺牲阳极）；超声波测厚在线监测；分级检修制度",
+      "measures": [
+        "选用-196℃冲击韧性≥100J的9Ni钢",
+        "焊缝避开应力集中区域",
+        "热喷涂铝/锌涂层（厚度150~250μm，防腐15~20年）",
+        "阴极保护（镁合金牺牲阳极）",
+        "超声波测厚在线监测",
+        "分级检修制度"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -1132,6 +1351,11 @@
       "failure_consequence": "泄漏、火灾爆炸、环境污染",
       "risk_level": "高风险",
       "corrective_measures": "全流程安装监检（12个关键环节全覆盖）；超声相控阵检测（PAUT）+100%焊缝双重检验；合于使用评价（FSE）对缺陷储罐进行评估修复，避免整体报废",
+      "measures": [
+        "全流程安装监检（12个关键环节全覆盖）",
+        "超声相控阵检测（PAUT）+100%焊缝双重检验",
+        "合于使用评价（FSE）对缺陷储罐进行评估修复，避免整体报废"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -1151,6 +1375,11 @@
       "failure_consequence": "导管断裂，液氧泄漏",
       "risk_level": "高风险",
       "corrective_measures": "控制焊接余高≤0.8mm；改为脉冲全位置自动管焊（焊缝余高可控制在0.3~0.4mm）；不允许补焊",
+      "measures": [
+        "控制焊接余高≤0.8mm",
+        "改为脉冲全位置自动管焊（焊缝余高可控制在0.3~0.4mm）",
+        "不允许补焊"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -1170,6 +1399,11 @@
       "failure_consequence": "火灾爆炸",
       "risk_level": "高风险",
       "corrective_measures": "增加SIS系统（SIL1）；BPCS保护层+安全阀+定期巡检；HAZOP+LOPA联合分析验证",
+      "measures": [
+        "增加SIS系统（SIL1）",
+        "BPCS保护层+安全阀+定期巡检",
+        "HAZOP+LOPA联合分析验证"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 4,
@@ -1189,6 +1423,10 @@
       "failure_consequence": "设备损坏、产品不合格",
       "risk_level": "高风险",
       "corrective_measures": "设双液位计、远传液位监控、高报警、高高联锁；制定定期巡检制度",
+      "measures": [
+        "设双液位计、远传液位监控、高报警、高高联锁",
+        "制定定期巡检制度"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -1208,6 +1446,11 @@
       "failure_consequence": "泄漏爆炸",
       "risk_level": "高风险",
       "corrective_measures": "设双远传压力表，有压力自动控制；设安全阀；增加喷淋系统",
+      "measures": [
+        "设双远传压力表，有压力自动控制",
+        "设安全阀",
+        "增加喷淋系统"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -1227,6 +1470,12 @@
       "failure_consequence": "贯穿性泄漏，介质泄漏",
       "risk_level": "高风险",
       "corrective_measures": "选材选用超低碳不锈钢；焊材选用比母材含铬量更高一级；焊接采用小线能量+浇水冷却缩短敏化区间停留时间；加强保温层维护，发现破损及时拆卸检查",
+      "measures": [
+        "选材选用超低碳不锈钢",
+        "焊材选用比母材含铬量更高一级",
+        "焊接采用小线能量+浇水冷却缩短敏化区间停留时间",
+        "加强保温层维护，发现破损及时拆卸检查"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -1246,6 +1495,11 @@
       "failure_consequence": "安全附件失效，介质泄漏",
       "risk_level": "高风险",
       "corrective_measures": "安全附件与筒体连接角焊缝采用严格焊接工艺；安全附件必须具备产品质量证明书、合格证及制造许可证；发现泄露整体更换，不得补焊",
+      "measures": [
+        "安全附件与筒体连接角焊缝采用严格焊接工艺",
+        "安全附件必须具备产品质量证明书、合格证及制造许可证",
+        "发现泄露整体更换，不得补焊"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -1265,6 +1519,13 @@
       "failure_consequence": "氯气泄漏，人员中毒",
       "risk_level": "高风险",
       "corrective_measures": "优先选用凹凸面或榫槽面法兰；垫片选用带内加强环的金属缠绕垫（316L+PTFE）或纯PTFE垫片；采用液压扭矩扳手均匀紧固；安装氯气泄漏报警仪；配备应急防毒面具和堵漏器材",
+      "measures": [
+        "优先选用凹凸面或榫槽面法兰",
+        "垫片选用带内加强环的金属缠绕垫（316L+PTFE）或纯PTFE垫片",
+        "采用液压扭矩扳手均匀紧固",
+        "安装氯气泄漏报警仪",
+        "配备应急防毒面具和堵漏器材"
+      ],
       "severity": 9,
       "occurrence": 5,
       "detection": 4,
@@ -1284,6 +1545,12 @@
       "failure_consequence": "穿孔泄漏",
       "risk_level": "中高风险",
       "corrective_measures": "优化结构设计：采用抗振结构设计（增加支撑板密度、改用导流筒结构）；管束与挡流板接触部位增设耐磨衬套或涂层；增加挡流板固定点；材质升级（铜合金/复合管材）",
+      "measures": [
+        "优化结构设计：采用抗振结构设计（增加支撑板密度、改用导流筒结构）",
+        "管束与挡流板接触部位增设耐磨衬套或涂层",
+        "增加挡流板固定点",
+        "材质升级（铜合金/复合管材）"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 3,
@@ -1303,6 +1570,13 @@
       "failure_consequence": "腐蚀穿孔",
       "risk_level": "高风险",
       "corrective_measures": "定期清理内壁腐蚀产物及沉积物；选用双相不锈钢或含钼奥氏体不锈钢；降低过程气中H₂S/SO₂浓度；增大腐蚀裕量；增加焊后消除应力热处理",
+      "measures": [
+        "定期清理内壁腐蚀产物及沉积物",
+        "选用双相不锈钢或含钼奥氏体不锈钢",
+        "降低过程气中H₂S/SO₂浓度",
+        "增大腐蚀裕量",
+        "增加焊后消除应力热处理"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -1322,6 +1596,12 @@
       "failure_consequence": "介质泄漏，能量损失",
       "risk_level": "中高风险",
       "corrective_measures": "挠性封头替代刚性端板（碟形或椭圆形封头吸收冲击能）；增设防气锤上升管段（高度≥1.5m）；分质分流选型；材料升级至316L不锈钢",
+      "measures": [
+        "挠性封头替代刚性端板（碟形或椭圆形封头吸收冲击能）",
+        "增设防气锤上升管段（高度≥1.5m）",
+        "分质分流选型",
+        "材料升级至316L不锈钢"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 3,
@@ -1341,6 +1621,12 @@
       "failure_consequence": "介质泄漏",
       "risk_level": "高风险",
       "corrective_measures": "选用更耐Cl-SCC材料（316L含钼或2205双相不锈钢）；优化焊接参数+焊后消应力热处理；加强保温层防水密封设计；定期检查保温系统",
+      "measures": [
+        "选用更耐Cl-SCC材料（316L含钼或2205双相不锈钢）",
+        "优化焊接参数+焊后消应力热处理",
+        "加强保温层防水密封设计",
+        "定期检查保温系统"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -1360,6 +1646,11 @@
       "failure_consequence": "管束穿孔泄漏",
       "risk_level": "高风险",
       "corrective_measures": "加强工艺防腐参数调整（“一脱四注”）；条件允许更换更耐蚀材质（316L）；增加介质日常检测监督",
+      "measures": [
+        "加强工艺防腐参数调整（“一脱四注”）",
+        "条件允许更换更耐蚀材质（316L）",
+        "增加介质日常检测监督"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -1379,6 +1670,11 @@
       "failure_consequence": "滤筒断裂",
       "risk_level": "高风险",
       "corrective_measures": "改用塑性更佳的双相不锈钢S31803；滤筒底部直角改为大圆弧过渡；设计模型应力模拟验证",
+      "measures": [
+        "改用塑性更佳的双相不锈钢S31803",
+        "滤筒底部直角改为大圆弧过渡",
+        "设计模型应力模拟验证"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -1398,6 +1694,10 @@
       "failure_consequence": "高压泵进水压力低报警，滤芯失效",
       "risk_level": "中高风险",
       "corrective_measures": "多次连续反冲洗改善；研制4mm不锈钢支撑骨架可拆卸滤芯（成本8000/1200元，固废减少50%以上）",
+      "measures": [
+        "多次连续反冲洗改善",
+        "研制4mm不锈钢支撑骨架可拆卸滤芯（成本8000/1200元，固废减少50%以上）"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 3,
@@ -1417,6 +1717,11 @@
       "failure_consequence": "过滤器无法密封承压",
       "risk_level": "高风险",
       "corrective_measures": "严格把控原材料，减少夹杂物；优化热处理工艺消除内应力；安装时准确施加预紧力",
+      "measures": [
+        "严格把控原材料，减少夹杂物",
+        "优化热处理工艺消除内应力",
+        "安装时准确施加预紧力"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -1436,6 +1741,12 @@
       "failure_consequence": "油气泄漏",
       "risk_level": "高风险",
       "corrective_measures": "同批次三阀组全部更换；使用定力矩扳手紧固；优化阀体结构设计；物资采购严格执行标准",
+      "measures": [
+        "同批次三阀组全部更换",
+        "使用定力矩扳手紧固",
+        "优化阀体结构设计",
+        "物资采购严格执行标准"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -1455,6 +1766,10 @@
       "failure_consequence": "管束频繁泄漏",
       "risk_level": "中高风险",
       "corrective_measures": "采用钛纳米聚合物涂料防腐处理（屏蔽层阻止腐蚀介质接触管壁，抗Cl⁻/H₂S/CO₂/O₂性能优异）；使用一年多未再泄漏，结垢减轻",
+      "measures": [
+        "采用钛纳米聚合物涂料防腐处理（屏蔽层阻止腐蚀介质接触管壁，抗Cl⁻/H₂S/CO₂/O₂性能优异）",
+        "使用一年多未再泄漏，结垢减轻"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -1474,6 +1789,13 @@
       "failure_consequence": "密封失效，油气泄漏",
       "risk_level": "高风险",
       "corrective_measures": "严格控制堆焊层铁素体含量3~10%；密封槽圆滑过渡减少应力集中；严格热处理；选择合适八角垫片（控制F/S含量）；控制降温速度防氢脆",
+      "measures": [
+        "严格控制堆焊层铁素体含量3~10%",
+        "密封槽圆滑过渡减少应力集中",
+        "严格热处理",
+        "选择合适八角垫片（控制F/S含量）",
+        "控制降温速度防氢脆"
+      ],
       "severity": 9,
       "occurrence": 5,
       "detection": 4,
@@ -1493,6 +1815,12 @@
       "failure_consequence": "绝热失效导致介质大量蒸发升压，疲劳断裂导致物理爆炸",
       "risk_level": "高风险",
       "corrective_measures": "优化限位支撑结构；规范焊接工艺+分配头整体热处理；采用专业工具装卸运输；落实日常安全检查和定期检验",
+      "measures": [
+        "优化限位支撑结构",
+        "规范焊接工艺+分配头整体热处理",
+        "采用专业工具装卸运输",
+        "落实日常安全检查和定期检验"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -1512,6 +1840,11 @@
       "failure_consequence": "储气瓶失效，水压试验泄漏",
       "risk_level": "高风险",
       "corrective_measures": "定期维护（排水、清洗、无损检测）；建议用复合材料修补或更换；多层设计降低腐蚀发生率",
+      "measures": [
+        "定期维护（排水、清洗、无损检测）",
+        "建议用复合材料修补或更换",
+        "多层设计降低腐蚀发生率"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -1531,6 +1864,9 @@
       "failure_consequence": "设备需监控使用",
       "risk_level": "中高风险",
       "corrective_measures": "监控使用，累计监控使用时间不得超过3年",
+      "measures": [
+        "监控使用，累计监控使用时间不得超过3年"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -1550,6 +1886,9 @@
       "failure_consequence": "设备需监控使用",
       "risk_level": "中风险",
       "corrective_measures": "监控使用，累计监控使用时间不得超过1年",
+      "measures": [
+        "监控使用，累计监控使用时间不得超过1年"
+      ],
       "severity": 6,
       "occurrence": 4,
       "detection": 4,
@@ -1569,6 +1908,9 @@
       "failure_consequence": "不得在当前介质下继续使用",
       "risk_level": "高风险",
       "corrective_measures": "不得继续在当前介质下使用，需更换材料或设备",
+      "measures": [
+        "不得继续在当前介质下使用，需更换材料或设备"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -1588,6 +1930,9 @@
       "failure_consequence": "需评估后才能继续使用",
       "risk_level": "中高风险",
       "corrective_measures": "委托有资质的特种设备检验机构进行检验，必要时进行安全评估（合于使用评价），经使用单位主要负责人批准后办理使用登记证书变更",
+      "measures": [
+        "委托有资质的特种设备检验机构进行检验，必要时进行安全评估（合于使用评价），经使用单位主要负责人批准后办理使用登记证书变更"
+      ],
       "severity": 7,
       "occurrence": 6,
       "detection": 4,
@@ -1607,6 +1952,9 @@
       "failure_consequence": "搪玻璃层失效可能导致基体腐蚀",
       "risk_level": "中风险",
       "corrective_measures": "按TSG 21-2016第7.2.2.2.1条要求进行检查，对损伤部位进行修复或更换部件",
+      "measures": [
+        "按TSG 21-2016第7.2.2.2.1条要求进行检查，对损伤部位进行修复或更换部件"
+      ],
       "severity": 5,
       "occurrence": 4,
       "detection": 5,
@@ -1626,6 +1974,9 @@
       "failure_consequence": "无法准确读取压力",
       "risk_level": "中风险",
       "corrective_measures": "立即更换压力表",
+      "measures": [
+        "立即更换压力表"
+      ],
       "severity": 5,
       "occurrence": 4,
       "detection": 5,
@@ -1645,6 +1996,9 @@
       "failure_consequence": "爆破片无法在规定压力下爆破泄压",
       "risk_level": "高风险",
       "corrective_measures": "立即纠正爆破片安装方向",
+      "measures": [
+        "立即纠正爆破片安装方向"
+      ],
       "severity": 7,
       "occurrence": 3,
       "detection": 5,
@@ -1664,6 +2018,9 @@
       "failure_consequence": "安全阀无法满足泄放要求",
       "risk_level": "高风险",
       "corrective_measures": "立即更换为正确型号的安全阀",
+      "measures": [
+        "立即更换为正确型号的安全阀"
+      ],
       "severity": 8,
       "occurrence": 3,
       "detection": 4,
@@ -1683,6 +2040,9 @@
       "failure_consequence": "外壁腐蚀减薄",
       "risk_level": "中风险",
       "corrective_measures": "检查外表面防腐漆是否完好，对破损部位重新涂覆防腐漆",
+      "measures": [
+        "检查外表面防腐漆是否完好，对破损部位重新涂覆防腐漆"
+      ],
       "severity": 5,
       "occurrence": 5,
       "detection": 4,
@@ -1702,6 +2062,9 @@
       "failure_consequence": "安全隐患未及时发现",
       "risk_level": "高风险",
       "corrective_measures": "使用单位应在定期检验有效期届满1个月以前向特种设备检验机构提出定期检验申请",
+      "measures": [
+        "使用单位应在定期检验有效期届满1个月以前向特种设备检验机构提出定期检验申请"
+      ],
       "severity": 7,
       "occurrence": 6,
       "detection": 3,
@@ -1721,6 +2084,9 @@
       "failure_consequence": "重新启用时可能存在安全隐患",
       "risk_level": "中高风险",
       "corrective_measures": "重新启用时应当进行自行检查，超过定期检验有效期的应按规定进行检验",
+      "measures": [
+        "重新启用时应当进行自行检查，超过定期检验有效期的应按规定进行检验"
+      ],
       "severity": 6,
       "occurrence": 4,
       "detection": 4,
@@ -1740,6 +2106,9 @@
       "failure_consequence": "可能对安全性能有重大影响",
       "risk_level": "高风险",
       "corrective_measures": "向国家市场监管总局申报，委托特种设备安全与节能技术委员会进行技术评审，评审结果经批准后方可投入生产使用",
+      "measures": [
+        "向国家市场监管总局申报，委托特种设备安全与节能技术委员会进行技术评审，评审结果经批准后方可投入生产使用"
+      ],
       "severity": 7,
       "occurrence": 3,
       "detection": 5,
@@ -1759,6 +2128,9 @@
       "failure_consequence": "无法追溯材料质量",
       "risk_level": "中高风险",
       "corrective_measures": "材料质量证明书内容应当齐全、清晰，印制可以追溯的信息化标识（包括二维码、条码等）",
+      "measures": [
+        "材料质量证明书内容应当齐全、清晰，印制可以追溯的信息化标识（包括二维码、条码等）"
+      ],
       "severity": 6,
       "occurrence": 4,
       "detection": 4,
@@ -1778,6 +2150,9 @@
       "failure_consequence": "对焊接和热处理要求更高",
       "risk_level": "中高风险",
       "corrective_measures": "应按TSG 21-2016第2.1.2.1(6)条要求证明各项性能指标能够满足规程和相应标准的要求",
+      "measures": [
+        "应按TSG 21-2016第2.1.2.1(6)条要求证明各项性能指标能够满足规程和相应标准的要求"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -1797,6 +2172,9 @@
       "failure_consequence": "超出标准范围的性能需验证",
       "risk_level": "中高风险",
       "corrective_measures": "应按TSG 21-2016第2.1.3.3条要求证明各项性能不低于协调标准中已规定厚度范围内的最低要求",
+      "measures": [
+        "应按TSG 21-2016第2.1.3.3条要求证明各项性能不低于协调标准中已规定厚度范围内的最低要求"
+      ],
       "severity": 7,
       "occurrence": 3,
       "detection": 4,
@@ -1816,6 +2194,9 @@
       "failure_consequence": "可能成为裂纹源",
       "risk_level": "中高风险",
       "corrective_measures": "深度大于或等于1mm的咬边应按GB/T 19624-2019平面缺陷进行安全评定",
+      "measures": [
+        "深度大于或等于1mm的咬边应按GB/T 19624-2019平面缺陷进行安全评定"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -1835,6 +2216,9 @@
       "failure_consequence": "可能导致局部减薄失效",
       "risk_level": "中风险",
       "corrective_measures": "应按GB/T 19624-2019第5.8条进行凹坑缺陷安全评定",
+      "measures": [
+        "应按GB/T 19624-2019第5.8条进行凹坑缺陷安全评定"
+      ],
       "severity": 6,
       "occurrence": 4,
       "detection": 4,
@@ -1854,6 +2238,9 @@
       "failure_consequence": "可能影响焊缝强度",
       "risk_level": "中低风险",
       "corrective_measures": "应按GB/T 19624-2019第5.9条进行气孔和夹渣缺陷安全评定",
+      "measures": [
+        "应按GB/T 19624-2019第5.9条进行气孔和夹渣缺陷安全评定"
+      ],
       "severity": 5,
       "occurrence": 5,
       "detection": 4,
@@ -1873,6 +2260,9 @@
       "failure_consequence": "可能影响焊缝强度",
       "risk_level": "中低风险",
       "corrective_measures": "应按GB/T 19624-2019第5.9条进行气孔和夹渣缺陷安全评定",
+      "measures": [
+        "应按GB/T 19624-2019第5.9条进行气孔和夹渣缺陷安全评定"
+      ],
       "severity": 5,
       "occurrence": 5,
       "detection": 4,
@@ -1892,6 +2282,9 @@
       "failure_consequence": "影响较小",
       "risk_level": "低风险",
       "corrective_measures": "深度小于1mm的咬边应按GB/T 19624-2019体积缺陷进行安全评定",
+      "measures": [
+        "深度小于1mm的咬边应按GB/T 19624-2019体积缺陷进行安全评定"
+      ],
       "severity": 4,
       "occurrence": 5,
       "detection": 4,
@@ -1911,6 +2304,9 @@
       "failure_consequence": "可能导致强度不足",
       "risk_level": "中高风险",
       "corrective_measures": "材料代用需重新计算，厚度差异超过10%的情况需重新校核",
+      "measures": [
+        "材料代用需重新计算，厚度差异超过10%的情况需重新校核"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -1930,6 +2326,9 @@
       "failure_consequence": "焊缝强度不足",
       "risk_level": "中高风险",
       "corrective_measures": "按GB/T 150.4-2024第7.4条要求进行焊缝外观检测，确保焊缝表面无裂纹、未焊透、未熔合、表面气孔、弧坑、未填满、夹渣和飞溅物",
+      "measures": [
+        "按GB/T 150.4-2024第7.4条要求进行焊缝外观检测，确保焊缝表面无裂纹、未焊透、未熔合、表面气孔、弧坑、未填满、夹渣和飞溅物"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -1949,6 +2348,10 @@
       "failure_consequence": "可能成为裂纹源",
       "risk_level": "中风险",
       "corrective_measures": "一般压力容器咬边深度不应大于0.5mm，咬边连续长度不应大于100mm，焊缝两侧咬边总长不超过焊缝长度10%；特殊要求压力容器不允许有咬边",
+      "measures": [
+        "一般压力容器咬边深度不应大于0.5mm，咬边连续长度不应大于100mm，焊缝两侧咬边总长不超过焊缝长度10%",
+        "特殊要求压力容器不允许有咬边"
+      ],
       "severity": 6,
       "occurrence": 5,
       "detection": 4,
@@ -1968,6 +2371,9 @@
       "failure_consequence": "可能导致应力集中",
       "risk_level": "中风险",
       "corrective_measures": "尖锐伤痕应予修磨，修磨斜度最大为1:3，修磨后应圆滑过渡并进行表面检测确认无裂纹",
+      "measures": [
+        "尖锐伤痕应予修磨，修磨斜度最大为1:3，修磨后应圆滑过渡并进行表面检测确认无裂纹"
+      ],
       "severity": 6,
       "occurrence": 4,
       "detection": 4,
@@ -1987,6 +2393,9 @@
       "failure_consequence": "材料性能下降",
       "risk_level": "中高风险",
       "corrective_measures": "应按GB/T 30579-2022材质劣化类别进行损伤模式识别",
+      "measures": [
+        "应按GB/T 30579-2022材质劣化类别进行损伤模式识别"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -2006,6 +2415,9 @@
       "failure_consequence": "失效可能性增加",
       "risk_level": "中高风险",
       "corrective_measures": "应按GB/T 26610.4-2022附录C确定减薄次因子",
+      "measures": [
+        "应按GB/T 26610.4-2022附录C确定减薄次因子"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -2025,6 +2437,9 @@
       "failure_consequence": "设备损伤累积可能导致事故",
       "risk_level": "中高风险",
       "corrective_measures": "加强小微企业压力容器定期检验和维护保养，加强作业人员安全培训",
+      "measures": [
+        "加强小微企业压力容器定期检验和维护保养，加强作业人员安全培训"
+      ],
       "severity": 7,
       "occurrence": 6,
       "detection": 4,
@@ -2044,6 +2459,11 @@
       "failure_consequence": "设备壁厚严重减薄",
       "risk_level": "高风险",
       "corrective_measures": "加强使用管理，每班清理釜内物料；内表面进行防腐处理（喷涂可剥性塑料）；采购设备时向设计单位说明使用条件",
+      "measures": [
+        "加强使用管理，每班清理釜内物料",
+        "内表面进行防腐处理（喷涂可剥性塑料）",
+        "采购设备时向设计单位说明使用条件"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -2063,6 +2483,12 @@
       "failure_consequence": "球罐存在安全隐患",
       "risk_level": "高风险",
       "corrective_measures": "对鼓包部位进行检测评估；使用单位应加强运行管理及时排污；控制介质中H₂S含量；考虑内防腐",
+      "measures": [
+        "对鼓包部位进行检测评估",
+        "使用单位应加强运行管理及时排污",
+        "控制介质中H₂S含量",
+        "考虑内防腐"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -2082,6 +2508,11 @@
       "failure_consequence": "储罐泄漏",
       "risk_level": "中高风险",
       "corrective_measures": "选用对氯元素敏感性较低的材料（如316L）；调整焊接工艺控制危险温度区停留时间；条件允许时进行固溶处理",
+      "measures": [
+        "选用对氯元素敏感性较低的材料（如316L）",
+        "调整焊接工艺控制危险温度区停留时间",
+        "条件允许时进行固溶处理"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -2101,6 +2532,11 @@
       "failure_consequence": "衬里失效，介质腐蚀金属基体",
       "risk_level": "中风险",
       "corrective_measures": "更换衬里，优先采用PTFE衬里金属网成型技术或复合成型技术；更换衬里前应进行耐压试验；开设泄漏信号指示孔",
+      "measures": [
+        "更换衬里，优先采用PTFE衬里金属网成型技术或复合成型技术",
+        "更换衬里前应进行耐压试验",
+        "开设泄漏信号指示孔"
+      ],
       "severity": 6,
       "occurrence": 4,
       "detection": 5,
@@ -2120,6 +2556,12 @@
       "failure_consequence": "介质泄漏",
       "risk_level": "中高风险",
       "corrective_measures": "选用屈服强度≤355MPa的材料；采用严格焊接工艺和较低焊接热输入量；焊后及时进行整体消除应力热处理；液氨中加入少量（0.2%以上）水作为缓蚀剂",
+      "measures": [
+        "选用屈服强度≤355MPa的材料",
+        "采用严格焊接工艺和较低焊接热输入量",
+        "焊后及时进行整体消除应力热处理",
+        "液氨中加入少量（0.2%以上）水作为缓蚀剂"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -2139,6 +2581,10 @@
       "failure_consequence": "蒸汽发生器失效",
       "risk_level": "中高风险",
       "corrective_measures": "优化操作条件，减少气泡产生；选用耐腐蚀疲劳性能更好的材料",
+      "measures": [
+        "优化操作条件，减少气泡产生",
+        "选用耐腐蚀疲劳性能更好的材料"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -2158,6 +2604,12 @@
       "failure_consequence": "可能引起爆燃、人员死伤、装置停车",
       "risk_level": "高风险",
       "corrective_measures": "设计阶段明确接管角焊缝焊接详图；制造阶段严格按NB/T47014进行焊接工艺评定；引入第三方设备监造；检验机构重点检测接管角焊缝",
+      "measures": [
+        "设计阶段明确接管角焊缝焊接详图",
+        "制造阶段严格按NB/T47014进行焊接工艺评定",
+        "引入第三方设备监造",
+        "检验机构重点检测接管角焊缝"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -2177,6 +2629,11 @@
       "failure_consequence": "设备整体报废",
       "risk_level": "高风险",
       "corrective_measures": "采用18-8奥氏体不锈钢制造；对碳钢设备进行消除应力热处理；严格控制焊接质量，减小应力集中",
+      "measures": [
+        "采用18-8奥氏体不锈钢制造",
+        "对碳钢设备进行消除应力热处理",
+        "严格控制焊接质量，减小应力集中"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -2196,6 +2653,9 @@
       "failure_consequence": "设备可能发生概率性失效",
       "risk_level": "中高风险",
       "corrective_measures": "采用概率断裂力学方法进行安全评定，采用Lagrange方法计算失效概率",
+      "measures": [
+        "采用概率断裂力学方法进行安全评定，采用Lagrange方法计算失效概率"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -2215,6 +2675,9 @@
       "failure_consequence": "可能引起火灾爆炸事故（丙烷泄漏）",
       "risk_level": "高风险",
       "corrective_measures": "采用概率方法（Monte-Carlo模拟）计算泄漏失效概率，制定针对性检验计划",
+      "measures": [
+        "采用概率方法（Monte-Carlo模拟）计算泄漏失效概率，制定针对性检验计划"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -2234,6 +2697,9 @@
       "failure_consequence": "设备腐蚀疲劳失效",
       "risk_level": "中高风险",
       "corrective_measures": "采用概率方法预测腐蚀疲劳剩余寿命，计算一定可靠度下的剩余寿命",
+      "measures": [
+        "采用概率方法预测腐蚀疲劳剩余寿命，计算一定可靠度下的剩余寿命"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -2253,6 +2719,11 @@
       "failure_consequence": "设备穿孔失效",
       "risk_level": "中高风险",
       "corrective_measures": "严格控制运行温度，避免超温；选用耐高温蠕变材料；加强温度监测",
+      "measures": [
+        "严格控制运行温度，避免超温",
+        "选用耐高温蠕变材料",
+        "加强温度监测"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -2272,6 +2743,11 @@
       "failure_consequence": "封头失效泄漏",
       "risk_level": "中风险",
       "corrective_measures": "对冷压封头进行固溶热处理释放应力、消除马氏体；直边段表面抛光消除划伤；改进酸洗钝化工艺",
+      "measures": [
+        "对冷压封头进行固溶热处理释放应力、消除马氏体",
+        "直边段表面抛光消除划伤",
+        "改进酸洗钝化工艺"
+      ],
       "severity": 6,
       "occurrence": 4,
       "detection": 4,
@@ -2291,6 +2767,11 @@
       "failure_consequence": "无法承受设计压力",
       "risk_level": "高风险",
       "corrective_measures": "立即停止使用或降级使用；全面修复涂层；缩短检验周期（专家经验）",
+      "measures": [
+        "立即停止使用或降级使用",
+        "全面修复涂层",
+        "缩短检验周期（专家经验）"
+      ],
       "severity": 8,
       "occurrence": 6,
       "detection": 3,
@@ -2310,6 +2791,11 @@
       "failure_consequence": "循环载荷下可能扩展",
       "risk_level": "高风险",
       "corrective_measures": "进行合于使用评价（含FAD评价）；缩短定检周期至1年；对历史缺陷跟踪检查（专家经验）",
+      "measures": [
+        "进行合于使用评价（含FAD评价）",
+        "缩短定检周期至1年",
+        "对历史缺陷跟踪检查（专家经验）"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 3,
@@ -2329,6 +2815,10 @@
       "failure_consequence": "可继续服役",
       "risk_level": "中高风险",
       "corrective_measures": "按合于使用评价结论运行1年后重新检测；若循环达57次需重新评价（专家经验）",
+      "measures": [
+        "按合于使用评价结论运行1年后重新检测",
+        "若循环达57次需重新评价（专家经验）"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 3,
@@ -2348,6 +2838,10 @@
       "failure_consequence": "高温油气泄漏",
       "risk_level": "高风险",
       "corrective_measures": "采用强制通风冷保护套接触式超声探头+耐高温无机耦合剂；引入自动化扫查机构实现长期自动在线检测（专家经验）",
+      "measures": [
+        "采用强制通风冷保护套接触式超声探头+耐高温无机耦合剂",
+        "引入自动化扫查机构实现长期自动在线检测（专家经验）"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 3,
@@ -2367,6 +2861,10 @@
       "failure_consequence": "壁厚减薄致泄漏",
       "risk_level": "中高风险",
       "corrective_measures": "采用锆酸锂晶片高温探头+波导杆+多层隔热罩；集成壁温测量与声速动态补偿（专家经验）",
+      "measures": [
+        "采用锆酸锂晶片高温探头+波导杆+多层隔热罩",
+        "集成壁温测量与声速动态补偿（专家经验）"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 3,
@@ -2386,6 +2884,11 @@
       "failure_consequence": "人员转移，环境污染",
       "risk_level": "高风险",
       "corrective_measures": "严禁物料混存；加强危险化学品储存管理；定期巡查（专家经验）",
+      "measures": [
+        "严禁物料混存",
+        "加强危险化学品储存管理",
+        "定期巡查（专家经验）"
+      ],
       "severity": 9,
       "occurrence": 3,
       "detection": 5,
@@ -2405,6 +2908,10 @@
       "failure_consequence": "闪燃致2死4伤",
       "risk_level": "高风险",
       "corrective_measures": "严格执行动火作业审批制度；作业前必须进行可燃气体检测和系统置换（专家经验）",
+      "measures": [
+        "严格执行动火作业审批制度",
+        "作业前必须进行可燃气体检测和系统置换（专家经验）"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 4,
@@ -2424,6 +2931,10 @@
       "failure_consequence": "爆炸致3死2伤",
       "risk_level": "高风险",
       "corrective_measures": "严格执行动火作业审批制度；动火前必须进行清洗置换和可燃气体检测（专家经验）",
+      "measures": [
+        "严格执行动火作业审批制度",
+        "动火前必须进行清洗置换和可燃气体检测（专家经验）"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 5,
@@ -2443,6 +2954,11 @@
       "failure_consequence": "爆炸致6死3伤",
       "risk_level": "高风险",
       "corrective_measures": "严格控制工艺温度；完善温度监控和联锁系统；定期校验安全附件（专家经验）",
+      "measures": [
+        "严格控制工艺温度",
+        "完善温度监控和联锁系统",
+        "定期校验安全附件（专家经验）"
+      ],
       "severity": 10,
       "occurrence": 4,
       "detection": 4,
@@ -2462,6 +2978,10 @@
       "failure_consequence": "裂纹会扩展",
       "risk_level": "高风险",
       "corrective_measures": "对球罐进行整体安全评估；对裂纹部位进行打磨消除+补焊+局部热处理（专家经验）",
+      "measures": [
+        "对球罐进行整体安全评估",
+        "对裂纹部位进行打磨消除+补焊+局部热处理（专家经验）"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 3,
@@ -2481,6 +3001,10 @@
       "failure_consequence": "爆炸致2人死亡",
       "risk_level": "高风险",
       "corrective_measures": "动火切割旧反应釜前必须清洗置换合格；严格执行动火作业审批制度（专家经验）",
+      "measures": [
+        "动火切割旧反应釜前必须清洗置换合格",
+        "严格执行动火作业审批制度（专家经验）"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 5,
@@ -2500,6 +3024,12 @@
       "failure_consequence": "泄漏",
       "risk_level": "中高风险",
       "corrective_measures": "检查同类管道外防腐层完整性；腐蚀严重部位除锈刷漆；涡流扫检或导波深度检测；修正保温层接缝方向（专家经验）",
+      "measures": [
+        "检查同类管道外防腐层完整性",
+        "腐蚀严重部位除锈刷漆",
+        "涡流扫检或导波深度检测",
+        "修正保温层接缝方向（专家经验）"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 3,
@@ -2519,6 +3049,11 @@
       "failure_consequence": "爆炸致1人死亡",
       "risk_level": "高风险",
       "corrective_measures": "加强操作规程培训；避免超温超压运行；定期检查安全联锁系统（专家经验）",
+      "measures": [
+        "加强操作规程培训",
+        "避免超温超压运行",
+        "定期检查安全联锁系统（专家经验）"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -2538,6 +3073,11 @@
       "failure_consequence": "爆炸致2死1伤",
       "risk_level": "高风险",
       "corrective_measures": "定期校验压力控制和泄压装置；设置压力高高联锁；加强巡回检查（专家经验）",
+      "measures": [
+        "定期校验压力控制和泄压装置",
+        "设置压力高高联锁",
+        "加强巡回检查（专家经验）"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 4,
@@ -2557,6 +3097,11 @@
       "failure_consequence": "焊缝成为薄弱环节",
       "risk_level": "中高风险",
       "corrective_measures": "选用低温韧性优良的材料；优化焊接工艺控制；加强焊后检测（专家经验）",
+      "measures": [
+        "选用低温韧性优良的材料",
+        "优化焊接工艺控制",
+        "加强焊后检测（专家经验）"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -2576,6 +3121,11 @@
       "failure_consequence": "管束腐蚀失效",
       "risk_level": "中高风险",
       "corrective_measures": "采用耐海水腐蚀材料（如钛合金或耐蚀涂层）；定期清洗管束；加强海水水质监测（专家经验）",
+      "measures": [
+        "采用耐海水腐蚀材料（如钛合金或耐蚀涂层）",
+        "定期清洗管束",
+        "加强海水水质监测（专家经验）"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -2595,6 +3145,11 @@
       "failure_consequence": "管道泄漏",
       "risk_level": "高风险",
       "corrective_measures": "严格控制介质中腐蚀性组分浓度；选用耐应力腐蚀材料；加强焊缝无损检测（专家经验）",
+      "measures": [
+        "严格控制介质中腐蚀性组分浓度",
+        "选用耐应力腐蚀材料",
+        "加强焊缝无损检测（专家经验）"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -2614,6 +3169,11 @@
       "failure_consequence": "储罐健康等级亚健康",
       "risk_level": "中风险",
       "corrective_measures": "对焊缝缺陷进行修复；建立定期健康监测体系；加强防腐涂层维护（专家经验）",
+      "measures": [
+        "对焊缝缺陷进行修复",
+        "建立定期健康监测体系",
+        "加强防腐涂层维护（专家经验）"
+      ],
       "severity": 6,
       "occurrence": 4,
       "detection": 4,
@@ -2633,6 +3193,11 @@
       "failure_consequence": "火灾爆炸",
       "risk_level": "高风险",
       "corrective_measures": "完善通风系统；加强可燃气体检测；规范火源管控（专家经验）",
+      "measures": [
+        "完善通风系统",
+        "加强可燃气体检测",
+        "规范火源管控（专家经验）"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 4,
@@ -2652,6 +3217,10 @@
       "failure_consequence": "爆炸",
       "risk_level": "高风险",
       "corrective_measures": "设置火焰探测器和紧急切断阀；加强泄漏检测和事故应急响应（专家经验）",
+      "measures": [
+        "设置火焰探测器和紧急切断阀",
+        "加强泄漏检测和事故应急响应（专家经验）"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 4,
@@ -2671,6 +3240,11 @@
       "failure_consequence": "人员伤亡",
       "risk_level": "高风险",
       "corrective_measures": "定期检查密封结构；加强消防设施维护；制定火灾应急预案（专家经验）",
+      "measures": [
+        "定期检查密封结构",
+        "加强消防设施维护",
+        "制定火灾应急预案（专家经验）"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 4,
@@ -2690,6 +3264,11 @@
       "failure_consequence": "可燃气体泄漏",
       "risk_level": "高风险",
       "corrective_measures": "定期检查端塞螺纹质量；规范安装扭矩；加强密封材料选用和管理（专家经验）",
+      "measures": [
+        "定期检查端塞螺纹质量",
+        "规范安装扭矩",
+        "加强密封材料选用和管理（专家经验）"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -2709,6 +3288,11 @@
       "failure_consequence": "阀门失去保压和调压功能",
       "risk_level": "高风险",
       "corrective_measures": "选用耐高压耐低温阀门密封材料；定期校验和更换阀门；加强介质过滤减少杂质（专家经验）",
+      "measures": [
+        "选用耐高压耐低温阀门密封材料",
+        "定期校验和更换阀门",
+        "加强介质过滤减少杂质（专家经验）"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -2728,6 +3312,11 @@
       "failure_consequence": "气瓶裂纹扩展导致失效",
       "risk_level": "高风险",
       "corrective_measures": "加强制造过程质量控制；优化瓶颈旋压收口和热处理工艺；定期进行无损检测（专家经验）",
+      "measures": [
+        "加强制造过程质量控制",
+        "优化瓶颈旋压收口和热处理工艺",
+        "定期进行无损检测（专家经验）"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -2747,6 +3336,11 @@
       "failure_consequence": "设备失效",
       "risk_level": "中风险",
       "corrective_measures": "加强抗震设计审查；定期进行抗震性能评估；优化结构连接方式（专家经验）",
+      "measures": [
+        "加强抗震设计审查",
+        "定期进行抗震性能评估",
+        "优化结构连接方式（专家经验）"
+      ],
       "severity": 7,
       "occurrence": 3,
       "detection": 4,
@@ -2766,6 +3360,10 @@
       "failure_consequence": "裂纹扩展",
       "risk_level": "高风险",
       "corrective_measures": "严格控制给水水质，控制碱度在标准范围内；加强焊缝无损检测（专家经验）",
+      "measures": [
+        "严格控制给水水质，控制碱度在标准范围内",
+        "加强焊缝无损检测（专家经验）"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -2785,6 +3383,11 @@
       "failure_consequence": "风险等级被低估",
       "risk_level": "中风险",
       "corrective_measures": "加强基础数据管理；按保守值选取失效后果计算参数；定期校验风险计算模型（专家经验）",
+      "measures": [
+        "加强基础数据管理",
+        "按保守值选取失效后果计算参数",
+        "定期校验风险计算模型（专家经验）"
+      ],
       "severity": 6,
       "occurrence": 4,
       "detection": 4,
@@ -2804,6 +3407,11 @@
       "failure_consequence": "裂纹扩展",
       "risk_level": "中高风险",
       "corrective_measures": "对高应力焊缝区域加强无损检测；严格控制介质温度和压力波动；制定应力腐蚀监控计划（专家经验）",
+      "measures": [
+        "对高应力焊缝区域加强无损检测",
+        "严格控制介质温度和压力波动",
+        "制定应力腐蚀监控计划（专家经验）"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -2823,6 +3431,10 @@
       "failure_consequence": "反应器鼓胀开裂熔化",
       "risk_level": "高风险",
       "corrective_measures": "升级温度控制系统，增加冗余联锁保护；加强操作培训和管理（专家经验）",
+      "measures": [
+        "升级温度控制系统，增加冗余联锁保护",
+        "加强操作培训和管理（专家经验）"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 4,
@@ -2842,6 +3454,12 @@
       "failure_consequence": "风险等级被低估",
       "risk_level": "中风险",
       "corrective_measures": "加强基础数据管理，准确录入储罐基础类型和土壤参数；按保守值选取失效后果计算参数；定期校验RBI风险计算模型；对高风险等级储罐进行现场复核（专家经验）",
+      "measures": [
+        "加强基础数据管理，准确录入储罐基础类型和土壤参数",
+        "按保守值选取失效后果计算参数",
+        "定期校验RBI风险计算模型",
+        "对高风险等级储罐进行现场复核（专家经验）"
+      ],
       "severity": 6,
       "occurrence": 4,
       "detection": 4,
@@ -2861,6 +3479,12 @@
       "failure_consequence": "裂纹扩展",
       "risk_level": "中高风险",
       "corrective_measures": "对高应力角焊缝区域进行100%无损检测（MT+UT）；严格控制液氨介质中杂质（特别是H₂S）含量；加强运行期间温度和压力波动监控；制定年度应力腐蚀专项检查计划（专家经验）",
+      "measures": [
+        "对高应力角焊缝区域进行100%无损检测（MT+UT）",
+        "严格控制液氨介质中杂质（特别是H₂S）含量",
+        "加强运行期间温度和压力波动监控",
+        "制定年度应力腐蚀专项检查计划（专家经验）"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -2880,6 +3504,12 @@
       "failure_consequence": "反应器鼓胀开裂熔化",
       "risk_level": "高风险",
       "corrective_measures": "升级温度控制系统，增加冗余CPU和独立热电偶；设置温度高高联锁（三取二逻辑）自动紧急停车；加强DCS系统日常维护和巡检；制定超温专项应急预案并定期演练（专家经验）",
+      "measures": [
+        "升级温度控制系统，增加冗余CPU和独立热电偶",
+        "设置温度高高联锁（三取二逻辑）自动紧急停车",
+        "加强DCS系统日常维护和巡检",
+        "制定超温专项应急预案并定期演练（专家经验）"
+      ],
       "severity": 9,
       "occurrence": 4,
       "detection": 4,
@@ -2899,6 +3529,9 @@
       "failure_consequence": "设备腐蚀减薄或开裂",
       "risk_level": "高风险",
       "corrective_measures": "根据腐蚀类型选用耐蚀材料，控制介质中腐蚀性成分",
+      "measures": [
+        "根据腐蚀类型选用耐蚀材料，控制介质中腐蚀性成分"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -2918,6 +3551,9 @@
       "failure_consequence": "设备腐蚀失效",
       "risk_level": "中高风险",
       "corrective_measures": "根据具体腐蚀介质选用合适的不锈钢牌号或更换材料",
+      "measures": [
+        "根据具体腐蚀介质选用合适的不锈钢牌号或更换材料"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -2937,6 +3573,9 @@
       "failure_consequence": "设备腐蚀减薄或穿孔",
       "risk_level": "中高风险",
       "corrective_measures": "根据介质腐蚀性选用耐蚀材料或增加防腐措施",
+      "measures": [
+        "根据介质腐蚀性选用耐蚀材料或增加防腐措施"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -2956,6 +3595,9 @@
       "failure_consequence": "设备脆性断裂失效",
       "risk_level": "高风险",
       "corrective_measures": "选用低温韧性好的材料，避免在脆性温度区间运行",
+      "measures": [
+        "选用低温韧性好的材料，避免在脆性温度区间运行"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -2975,6 +3617,9 @@
       "failure_consequence": "设备韧性断裂失效",
       "risk_level": "高风险",
       "corrective_measures": "安装可靠的安全泄压装置，严禁超压运行",
+      "measures": [
+        "安装可靠的安全泄压装置，严禁超压运行"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -2994,6 +3639,9 @@
       "failure_consequence": "设备腐蚀断裂失效",
       "risk_level": "高风险",
       "corrective_measures": "优化结构设计减少应力集中，选用耐蚀材料",
+      "measures": [
+        "优化结构设计减少应力集中，选用耐蚀材料"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -3013,6 +3661,9 @@
       "failure_consequence": "设备蠕变失效",
       "risk_level": "中高风险",
       "corrective_measures": "严格控制运行温度，选用耐高温材料",
+      "measures": [
+        "严格控制运行温度，选用耐高温材料"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -3032,6 +3683,9 @@
       "failure_consequence": "设备疲劳失效",
       "risk_level": "中高风险",
       "corrective_measures": "优化结构设计减少应力集中，控制操作压力波动",
+      "measures": [
+        "优化结构设计减少应力集中，控制操作压力波动"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -3051,6 +3705,9 @@
       "failure_consequence": "可能导致设备爆破",
       "risk_level": "极高风险",
       "corrective_measures": "控制检漏蒸汽质量，防止腐蚀性物质进入",
+      "measures": [
+        "控制检漏蒸汽质量，防止腐蚀性物质进入"
+      ],
       "severity": 9,
       "occurrence": 3,
       "detection": 4,
@@ -3070,6 +3727,9 @@
       "failure_consequence": "设备可能发生概率性失效",
       "risk_level": "中高风险",
       "corrective_measures": "采用概率断裂力学方法进行安全可靠性评定",
+      "measures": [
+        "采用概率断裂力学方法进行安全可靠性评定"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -3089,6 +3749,9 @@
       "failure_consequence": "同类事故重复发生",
       "risk_level": "高风险",
       "corrective_measures": "采用多因素综合分析方法判定主导失效机制",
+      "measures": [
+        "采用多因素综合分析方法判定主导失效机制"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -3108,6 +3771,9 @@
       "failure_consequence": "设备失效",
       "risk_level": "中高风险",
       "corrective_measures": "优化结构设计，进行应力分析",
+      "measures": [
+        "优化结构设计，进行应力分析"
+      ],
       "severity": 7,
       "occurrence": 3,
       "detection": 4,
@@ -3127,6 +3793,9 @@
       "failure_consequence": "设备泄漏或失效",
       "risk_level": "中风险",
       "corrective_measures": "按标准重新设计法兰，确保密封和强度",
+      "measures": [
+        "按标准重新设计法兰，确保密封和强度"
+      ],
       "severity": 6,
       "occurrence": 3,
       "detection": 4,
@@ -3146,6 +3815,9 @@
       "failure_consequence": "锅炉漏水",
       "risk_level": "中高风险",
       "corrective_measures": "定期检查阀门，发现泄漏及时更换",
+      "measures": [
+        "定期检查阀门，发现泄漏及时更换"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -3165,6 +3837,9 @@
       "failure_consequence": "设备早期失效",
       "risk_level": "高风险",
       "corrective_measures": "严格按标准设计制造，加强质量检验",
+      "measures": [
+        "严格按标准设计制造，加强质量检验"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -3184,6 +3859,9 @@
       "failure_consequence": "设备损毁，厂房被摧毁",
       "risk_level": "极高风险",
       "corrective_measures": "加强运行监控，安装可靠的安全泄压装置",
+      "measures": [
+        "加强运行监控，安装可靠的安全泄压装置"
+      ],
       "severity": 10,
       "occurrence": 3,
       "detection": 4,
@@ -3203,6 +3881,9 @@
       "failure_consequence": "设备爆炸",
       "risk_level": "高风险",
       "corrective_measures": "选用低温韧性好的材料，避免低温超压",
+      "measures": [
+        "选用低温韧性好的材料，避免低温超压"
+      ],
       "severity": 9,
       "occurrence": 3,
       "detection": 4,
@@ -3222,6 +3903,9 @@
       "failure_consequence": "制造过程中废品",
       "risk_level": "中风险",
       "corrective_measures": "通过宏观检测、化学成分分析、金相组织分析等手段查明原因",
+      "measures": [
+        "通过宏观检测、化学成分分析、金相组织分析等手段查明原因"
+      ],
       "severity": 6,
       "occurrence": 4,
       "detection": 4,
@@ -3241,6 +3925,9 @@
       "failure_consequence": "U型管失效",
       "risk_level": "中高风险",
       "corrective_measures": "改进焊接工艺，控制热影响区敏化",
+      "measures": [
+        "改进焊接工艺，控制热影响区敏化"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -3260,6 +3947,9 @@
       "failure_consequence": "盘管腐蚀失效",
       "risk_level": "中风险",
       "corrective_measures": "从盘管制造环节针对焊接及固溶处理给出改进建议",
+      "measures": [
+        "从盘管制造环节针对焊接及固溶处理给出改进建议"
+      ],
       "severity": 6,
       "occurrence": 4,
       "detection": 4,
@@ -3279,6 +3969,9 @@
       "failure_consequence": "不锈钢压力容器失效",
       "risk_level": "中高风险",
       "corrective_measures": "基于典型失效模式从设计、制造和服役阶段给出预防措施",
+      "measures": [
+        "基于典型失效模式从设计、制造和服役阶段给出预防措施"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -3298,6 +3991,9 @@
       "failure_consequence": "泄漏事故",
       "risk_level": "中高风险",
       "corrective_measures": "从事故发生时间、地点、充装介质、发生环节等方面加强安全管理",
+      "measures": [
+        "从事故发生时间、地点、充装介质、发生环节等方面加强安全管理"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -3317,6 +4013,9 @@
       "failure_consequence": "设备失效事故",
       "risk_level": "中高风险",
       "corrective_measures": "加强失效分析能力，采取有效预防措施",
+      "measures": [
+        "加强失效分析能力，采取有效预防措施"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -3336,6 +4035,9 @@
       "failure_consequence": "锅炉承压部件失效",
       "risk_level": "中高风险",
       "corrective_measures": "优化结构设计，减少拉应力集中",
+      "measures": [
+        "优化结构设计，减少拉应力集中"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -3355,6 +4057,9 @@
       "failure_consequence": "锅炉承压部件失效",
       "risk_level": "中高风险",
       "corrective_measures": "严格控制运行温度，避免超温",
+      "measures": [
+        "严格控制运行温度，避免超温"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -3374,6 +4079,9 @@
       "failure_consequence": "爆炸事故",
       "risk_level": "极高风险",
       "corrective_measures": "加强快开门容器安全管理和检验",
+      "measures": [
+        "加强快开门容器安全管理和检验"
+      ],
       "severity": 9,
       "occurrence": 6,
       "detection": 3,
@@ -3393,6 +4101,9 @@
       "failure_consequence": "快开门容器失效",
       "risk_level": "中高风险",
       "corrective_measures": "控制腐蚀介质，减少应力集中",
+      "measures": [
+        "控制腐蚀介质，减少应力集中"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -3412,6 +4123,9 @@
       "failure_consequence": "快开门容器爆炸",
       "risk_level": "高风险",
       "corrective_measures": "完善安全联锁装置，定期校验",
+      "measures": [
+        "完善安全联锁装置，定期校验"
+      ],
       "severity": 8,
       "occurrence": 6,
       "detection": 4,
@@ -3431,6 +4145,9 @@
       "failure_consequence": "介质泄漏",
       "risk_level": "中高风险",
       "corrective_measures": "加强密封结构检验，定期更换密封件",
+      "measures": [
+        "加强密封结构检验，定期更换密封件"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -3450,6 +4167,9 @@
       "failure_consequence": "设备腐蚀失效",
       "risk_level": "中高风险",
       "corrective_measures": "根据介质选用耐蚀材料",
+      "measures": [
+        "根据介质选用耐蚀材料"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -3469,6 +4189,9 @@
       "failure_consequence": "需更换缺陷部位",
       "risk_level": "中高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -3488,6 +4211,9 @@
       "failure_consequence": "设备失效",
       "risk_level": "中高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -3507,6 +4233,9 @@
       "failure_consequence": "设备爆破失效",
       "risk_level": "高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 8,
       "occurrence": 3,
       "detection": 4,
@@ -3526,6 +4255,9 @@
       "failure_consequence": "接管开裂失效",
       "risk_level": "中高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -3545,6 +4277,9 @@
       "failure_consequence": "封头开裂失效",
       "risk_level": "高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -3564,6 +4299,9 @@
       "failure_consequence": "点蚀穿透或SCC导致失效",
       "risk_level": "中高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -3583,6 +4321,9 @@
       "failure_consequence": "设备风险升高",
       "risk_level": "中高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -3602,6 +4343,9 @@
       "failure_consequence": "设备损伤累积可能导致事故",
       "risk_level": "中高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 7,
       "occurrence": 6,
       "detection": 4,
@@ -3621,6 +4365,9 @@
       "failure_consequence": "设备可能发生概率性失效",
       "risk_level": "中高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -3640,6 +4387,9 @@
       "failure_consequence": "不锈钢压力容器失效",
       "risk_level": "中高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 7,
       "occurrence": 4,
       "detection": 4,
@@ -3659,6 +4409,9 @@
       "failure_consequence": "点蚀穿透或SCC导致失效",
       "risk_level": "中高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -3678,6 +4431,9 @@
       "failure_consequence": "锅炉非计划停运",
       "risk_level": "中高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -3697,6 +4453,9 @@
       "failure_consequence": "水冷壁管爆管",
       "risk_level": "高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 8,
       "occurrence": 5,
       "detection": 4,
@@ -3716,6 +4475,9 @@
       "failure_consequence": "管道破裂",
       "risk_level": "高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,
@@ -3735,6 +4497,9 @@
       "failure_consequence": "管道穿孔泄漏",
       "risk_level": "中高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 7,
       "occurrence": 5,
       "detection": 4,
@@ -3754,6 +4519,9 @@
       "failure_consequence": "球罐泄漏或开裂",
       "risk_level": "高风险",
       "corrective_measures": "—",
+      "measures": [
+        "—"
+      ],
       "severity": 8,
       "occurrence": 4,
       "detection": 4,

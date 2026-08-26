@@ -3,6 +3,10 @@
 -----------------------------------
 提供缺陷提取、FMEA评估、完整评估、人工审核任务的提交与状态查询。
 审核端点已加入并发锁与输入校验，确保数据一致性与操作幂等。
+
+风险等级统一说明：
+    全系统已统一采用四级风险等级：低(1)/中(2)/高(3)/极高(4)。
+    本文件不直接处理风险等级文字，相关逻辑位于 app/tasks/analysis.py 及 app/core/utils.py。
 """
 import logging
 from typing import Any, Dict, List, Optional
@@ -11,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy.orm import Session
 
+from app.core.config import settings  # 便于后续使用阈值等配置
 from app.db.database import get_db
 from app.models import Task
 from app.tasks.analysis import (

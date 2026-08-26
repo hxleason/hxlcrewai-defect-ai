@@ -1,51 +1,138 @@
 {
-  "version": "1.0",
-  "standard": "GB/T 30583-2026",
-  "groups": {
-    "Fe-1": {
-      "description": "碳素钢",
-      "materials": ["Q235B", "Q235C", "20#", "20G", "A105", "A106B"]
+  "groups": [
+    {
+      "group_id": "Fe-1",
+      "group_name": "非合金钢",
+      "subgroups": [
+        {
+          "subgroup_id": "Fe-1-1",
+          "subgroup_name": "碳素钢"
+        },
+        {
+          "subgroup_id": "Fe-1-2",
+          "subgroup_name": "低温用钢"
+        },
+        {
+          "subgroup_id": "Fe-1-3",
+          "subgroup_name": "其他非合金钢"
+        }
+      ]
     },
-    "Fe-3-1": {
-      "description": "低合金钢（Mn-Mo 系，可焊性好）",
-      "materials": ["Q345R", "16MnR", "16MnDR", "09MnNiDR"]
+    {
+      "group_id": "Fe-3",
+      "group_name": "低合金钢",
+      "subgroups": [
+        {
+          "subgroup_id": "Fe-3-1",
+          "subgroup_name": "Mn钢"
+        },
+        {
+          "subgroup_id": "Fe-3-2",
+          "subgroup_name": "Mn-V钢"
+        },
+        {
+          "subgroup_id": "Fe-3-3",
+          "subgroup_name": "Cr-Mo低合金钢"
+        }
+      ]
     },
-    "Fe-4-1": {
-      "description": "低合金耐热钢（1Cr-0.5Mo）",
-      "materials": ["15CrMoR", "15CrMoG", "12CrMo", "13CrMo44"]
+    {
+      "group_id": "Fe-4",
+      "group_name": "Cr-Mo耐热钢",
+      "subgroups": [
+        {
+          "subgroup_id": "Fe-4-1",
+          "subgroup_name": "Cr-Mo(<1.5Cr)"
+        },
+        {
+          "subgroup_id": "Fe-4-2",
+          "subgroup_name": "Cr-Mo(1.5Cr~2.5Cr)"
+        }
+      ]
     },
-    "Fe-4-2": {
-      "description": "低合金耐热钢（1.25Cr-0.5Mo，含 V）",
-      "materials": ["12Cr1MoV", "12Cr1MoVG", "13CrMoV9-10"]
+    {
+      "group_id": "Fe-5A",
+      "group_name": "高Cr-Mo钢",
+      "subgroups": [
+        {
+          "subgroup_id": "Fe-5A",
+          "subgroup_name": "高Cr-Mo(2.5Cr~4Cr)"
+        }
+      ]
     },
-    "Fe-5A": {
-      "description": "低合金耐热钢（2.25Cr-1Mo）",
-      "materials": ["12Cr2Mo1R", "12Cr2Mo1", "10CrMo9-10"]
+    {
+      "group_id": "Fe-5B",
+      "group_name": "Cr-Mo-V钢",
+      "subgroups": [
+        {
+          "subgroup_id": "Fe-5B-1",
+          "subgroup_name": "中铬(<4Cr)"
+        },
+        {
+          "subgroup_id": "Fe-5B-2",
+          "subgroup_name": "9Cr马氏体"
+        }
+      ]
     },
-    "Fe-5B-1": {
-      "description": "中合金耐热钢（5Cr-0.5Mo）",
-      "materials": ["1Cr5Mo", "15Cr5Mo", "A335-P5"]
+    {
+      "group_id": "Fe-6",
+      "group_name": "铁素体不锈钢",
+      "subgroups": [
+        {
+          "subgroup_id": "Fe-6",
+          "subgroup_name": "铁素体不锈钢"
+        }
+      ]
     },
-    "Fe-5B-2": {
-      "description": "马氏体耐热钢（9Cr-1Mo-V）",
-      "materials": ["10Cr9Mo1VNbN", "A335-P91", "A182-F91"]
+    {
+      "group_id": "Fe-7",
+      "group_name": "奥氏体不锈钢(304系列)",
+      "subgroups": [
+        {
+          "subgroup_id": "Fe-7",
+          "subgroup_name": "奥氏体不锈钢(304系列)"
+        }
+      ]
     },
-    "Fe-6": {
-      "description": "低温钢（3.5Ni）",
-      "materials": ["08Ni3DR", "3.5Ni"]
+    {
+      "group_id": "Fe-8",
+      "group_name": "奥氏体不锈钢(316系列等)",
+      "subgroups": [
+        {
+          "subgroup_id": "Fe-8",
+          "subgroup_name": "奥氏体不锈钢(316系列等)"
+        }
+      ]
     },
-    "Fe-7": {
-      "description": "奥氏体不锈钢",
-      "materials": ["S30408", "S30403", "S31608", "S31603", "S32168", "06Cr19Ni10", "022Cr17Ni12Mo2"]
+    {
+      "group_id": "Fe-9B",
+      "group_name": "双相不锈钢",
+      "subgroups": [
+        {
+          "subgroup_id": "Fe-9B",
+          "subgroup_name": "双相不锈钢"
+        }
+      ]
     },
-    "Fe-8": {
-      "description": "双相不锈钢",
-      "materials": ["S22053", "022Cr23Ni5Mo3N"]
+    {
+      "group_id": "Fe-10I",
+      "group_name": "超级铁素体不锈钢",
+      "subgroups": [
+        {
+          "subgroup_id": "Fe-10I",
+          "subgroup_name": "超级铁素体不锈钢"
+        }
+      ]
     },
-    "Fe-8-1": {
-      "description": "超级双相不锈钢",
-      "materials": ["S25073", "022Cr25Ni7Mo4N"]
+    {
+      "group_id": "Fe-11A",
+      "group_name": "镍基合金",
+      "subgroups": [
+        {
+          "subgroup_id": "Fe-11A",
+          "subgroup_name": "镍基合金"
+        }
+      ]
     }
-  },
-  "material_map": {}
+  ]
 }

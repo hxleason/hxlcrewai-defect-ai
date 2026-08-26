@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-知识库构建脚本
+知识库构建脚本（v2.1 · 修正措施字段及分割逻辑）
 将 data/ 目录下的 Excel 源文件转换为 JSON 格式，供系统运行时加载。
 需要安装 openpyxl:  pip install openpyxl
+
+v2.1 变更：
+- 在失效案例 JSON 中新增 measures 字段（列表），由 corrective_measures 分割而成，
+  便于下游直接使用，避免字段名不匹配问题。
+- 优化措施分割：仅按中英文分号和换行分割，不按逗号分割，
+  避免单条措施因含逗号被错误拆分。
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -53,7 +60,6 @@ def read_sheet_rows(file_path: Path, sheet_name: str = None) -> list[dict]:
     header = [str(cell).strip() if cell is not None else f"col_{i}" for i, cell in enumerate(rows[0])]
     data = []
     for raw in rows[1:]:
-        # 补齐长度
         row_vals = list(raw) + [""] * (len(header) - len(raw))
         row_dict = {}
         for i, col in enumerate(header):
@@ -61,7 +67,7 @@ def read_sheet_rows(file_path: Path, sheet_name: str = None) -> list[dict]:
             if val is None:
                 val = ""
             row_dict[col] = str(val).strip()
-        # 如果整行都是空字符串（可能因为空行但未被完全跳过），跳过
+        # 如果整行都是空字符串，跳过
         if all(v == "" for v in row_dict.values()):
             continue
         data.append(row_dict)
@@ -74,6 +80,19 @@ def parse_int(value, default=1):
         return int(float(str(value).strip()))
     except (ValueError, TypeError):
         return default
+
+
+def split_measures(text: str) -> list[str]:
+    """
+    将整改措施字符串按中英文分号、换行分割为列表。
+    不按逗号分割，因为逗号常出现在单个措施内部。
+    """
+    if not text:
+        return []
+    # 仅支持中文分号、英文分号、换行
+    parts = re.split(r"[；;\n]", text)
+    # 去除空白项
+    return [p.strip() for p in parts if p.strip()]
 
 
 def build_expert_rules() -> list[dict]:
@@ -92,7 +111,7 @@ def build_expert_rules() -> list[dict]:
             "if_condition": row.get("IF条件", ""),
             "then_action": row.get("THEN动作", ""),
             "action_explanation": row.get("动作解释", ""),
-            "remark": row.get("备注", "")  # 备注中通常包含“来源：...”
+            "remark": row.get("备注", "")
         }
         # 只保留 rule_id 非空的条目
         if rule["rule_id"]:
@@ -111,6 +130,9 @@ def build_failure_cases() -> list[dict]:
     rows = read_sheet_rows(xlsx_path)
     cases = []
     for row in rows:
+        corrective_measures = row.get("整改措施", "")
+        measures = split_measures(corrective_measures)
+
         case = {
             "case_id": row.get("情景ID", ""),
             "equipment_category": row.get("设备大类", ""),
@@ -121,14 +143,15 @@ def build_failure_cases() -> list[dict]:
             "root_cause": row.get("根本原因", ""),
             "failure_consequence": row.get("失效后果", ""),
             "risk_level": row.get("风险等级", ""),
-            "corrective_measures": row.get("整改措施", ""),
+            "corrective_measures": corrective_measures,   # 保留原始字符串
+            "measures": measures,                         # 规范化列表（不含逗号拆分）
             "severity": parse_int(row.get("严重度S", ""), 1),
             "occurrence": parse_int(row.get("发生度O", ""), 1),
             "detection": parse_int(row.get("探测度D", ""), 1),
             "sod_basis": row.get("S/O/D依据", ""),
             "source_type": row.get("来源类型", ""),
             "reference": row.get("参考文献", ""),
-            "note": row.get("备注", "")  # 例如 "核心训练样本"
+            "note": row.get("备注", "")
         }
         if case["case_id"]:
             cases.append(case)
@@ -162,7 +185,8 @@ def main():
     print("说明：")
     print("  - 规则 JSON 结构：{\"rules\": [ ... ]}")
     print("  - 案例 JSON 结构：{\"cases\": [ ... ]}")
-    print("  - 系统运行时请读取这些 JSON 文件。")
+    print("  - 每个案例同时包含 'corrective_measures'（原始字符串）和 'measures'（列表）字段")
+    print("  - measures 按分号/换行分割，不拆分逗号")
 
 
 if __name__ == "__main__":

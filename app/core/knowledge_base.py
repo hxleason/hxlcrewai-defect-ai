@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 app/core/knowledge_base.py
-知识库引擎模块（v3.6 · 终极版）
+知识库引擎模块（v3.7 · 终极版）
 
 功能：
 1. 加载并管理专家规则库和失效案例库；
@@ -10,6 +10,11 @@ app/core/knowledge_base.py
 3. 提供相似案例检索和基线 S/O/D 提取；
 4. 单例模式，全局唯一实例；
 5. 支持路径配置和健壮的错误处理。
+
+v3.7 修复与增强（本次）：
+- **P1-1 修复**：apply_rule_adjustments() 中 S/O/D 最终值增加上限钳制
+  （max(1, min(10, ...))），与 rule_engine.py 保持一致，防止专家规则
+  叠加后 S/O/D 超出 1~10 的合法范围。
 
 v3.6 修复与增强：
 - 修正相似案例措施提取：统一从 case 的 "measures" 或 "corrective_measures" 字段提取，
@@ -578,6 +583,9 @@ class KnowledgeBase:
         双重防御：
           1. 同一 rule_class 只应用第一条命中的规则（最具体规则）；
           2. S/O/D 总调整量分别封顶，默认上限 S=+5、O=+3、D=+2。
+
+        v3.7 修复：
+          最终 S/O/D 增加范围钳制（1~10），防止规则叠加后超出合法评分区间。
         """
         if max_s_adj is None:
             max_s_adj = self.DEFAULT_MAX_S_ADJ
@@ -623,9 +631,10 @@ class KnowledgeBase:
                 "applied_deltas": {"S": s_delta, "O": o_delta, "D": d_delta},
             })
 
-        s = max(1, base_s + s_adj_total)
-        o = max(1, base_o + o_adj_total)
-        d = max(1, base_d + d_adj_total)
+        # ★ v3.7 关键修复：增加上限钳制，确保 S/O/D 在 1~10 之间
+        s = max(1, min(10, base_s + s_adj_total))
+        o = max(1, min(10, base_o + o_adj_total))
+        d = max(1, min(10, base_d + d_adj_total))
 
         logger.debug(
             "规则调整完成: %s → [%d/%d/%d]，实际应用 %d 条规则",

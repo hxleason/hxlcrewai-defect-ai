@@ -1,5 +1,5 @@
 """
-app/tasks/analysis.py – Celery 任务定义（终极版 v7.5）
+app/tasks/analysis.py – Celery 任务定义（终极版 v7.5 + v7.6 P0 修复）
 ────────────────────────────────────────────────────────────────
 功能：
   - 保留原 v3.1 所有任务，向前兼容
@@ -49,6 +49,12 @@ v7.5 更新：
   - 修复 review_and_proceed 中人工审核挂起阈值硬编码问题：
     从 `rpn > 150` 改为 `rpn >= settings.HIGH_RISK_THRESHOLD`，
     与配置及 crews.py 保持一致。
+
+v7.6 更新（P0 修复）：
+  - 修复人工审核状态机 Bug：API 端在投递 continue_after_review 前
+    已将任务状态改为 `processing`（防止并发重复提交），而本任务的
+    状态校验仍只接受 `pending_review`，导致审核后续流程永远无法执行。
+    现改为同时接受 `pending_review` 和 `processing` 两种状态。
 """
 
 import datetime
@@ -986,11 +992,20 @@ def continue_after_review(self, task_id: int, decisions: dict = None):
     """
     人工审核提交后，继续执行法规审计阶段。
     decisions: {"1": {"action": "accept", "comment": ""}, "2": {"action": "reject", ...}}
+
+    ★ v7.6 P0 修复：
+      API 端在投递本任务前已将任务状态由 pending_review 改为 processing
+      （防止并发重复提交），因此本任务需要同时接受 processing 状态，
+      否则会错误返回 invalid_status 导致后续审计流程永久停滞。
     """
     with SessionLocal() as db:
         task = db.query(Task).filter(Task.id == task_id).first()
-        if not task or task.status != "pending_review":
-            logger.error("任务 %s 状态不正确 (expected pending_review)", task_id)
+        # ★ v7.6 修复：接受 pending_review 和 processing 两种状态
+        if not task or task.status not in ("pending_review", "processing"):
+            logger.error(
+                "任务 %s 状态不正确 (expected pending_review or processing, got %s)",
+                task_id, task.status if task else None,
+            )
             return "invalid_status"
 
         stored = task.result or {}

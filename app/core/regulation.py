@@ -4,10 +4,15 @@ app/core/regulation.py
 
 功能：
     1. 根据“缺陷类型 + 风险等级”匹配法规引用、强制措施和检验建议；
-    2. 支持别名映射，兼容“局部减薄”“未熔合”等非标准表述；
+    2. 支持别名映射，兼容“局部减薄”“腐蚀坑”等非标准表述；
     3. 统一使用四级风险等级：低风险(1)、中风险(2)、高风险(3)、极高风险(4)；
     4. 匹配失败时自动降级，返回保守但可执行的工程建议；
     5. 无外部文件依赖，冷启动即可使用。
+
+本版更新（P1-2 短期统一修复）：
+    1. 导入公共缺陷类型工具模块 app.core.defect_type_utils，统一别名映射与归一化逻辑；
+    2. 删除本地 TYPE_ALIAS 字典和 _normalize_defect_type 函数，避免两处维护；
+    3. “未熔合”不再被映射为“未焊透”，“夹渣”作为标准键保留。
 
 调用示例：
     from app.core.regulation import search_regulation
@@ -24,7 +29,9 @@ app/core/regulation.py
 """
 
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
+
+from app.core.defect_type_utils import normalize_defect_type as _normalize_defect_type
 
 logger = logging.getLogger("defect_fmea.regulation")
 
@@ -208,44 +215,8 @@ DEFAULT_REGULATION_DB: Dict[tuple, Dict[str, Any]] = {
     },
 }
 
-# ============================ 别名映射 ============================
-# 前端/Agent 输出的类型名称 → 内置数据库中的标准名称。
-# 优先级高于数据库键匹配，避免“微裂纹”无法命中“表面裂纹”细分条目。
-
-TYPE_ALIAS: Dict[str, str] = {
-    "局部减薄": "腐蚀",
-    "腐蚀坑": "点蚀",
-    "未熔合": "未焊透",
-    "微裂纹": "表面裂纹",
-    "内部裂纹": "裂纹",
-    "均匀腐蚀": "腐蚀",
-}
-
 
 # ============================ 辅助解析函数 ============================
-
-def _normalize_defect_type(defect_type: str) -> str:
-    """
-    将任意缺陷类型标准化为法规数据库中的标准名称。
-    先查别名表，再按数据库键长度降序匹配。
-    """
-    if not defect_type:
-        return ""
-
-    # 1. 别名优先
-    for alias, real in TYPE_ALIAS.items():
-        if alias in defect_type and real:
-            if any(k[0] == real for k in DEFAULT_REGULATION_DB):
-                return real
-
-    # 2. 数据库键长度降序匹配，防止“表面裂纹”被“裂纹”抢断
-    candidates = sorted(DEFAULT_REGULATION_DB.keys(), key=lambda k: len(k[0]), reverse=True)
-    for dtype, _ in candidates:
-        if dtype in defect_type:
-            return dtype
-
-    return ""
-
 
 def _parse_defect_type(query: str) -> str:
     """从查询字符串中提取缺陷类型"""
@@ -268,14 +239,15 @@ def _parse_risk_level(query: str) -> int:
     # 极高优先，避免被“高”抢断
     if "极高" in q or "严重" in q:
         return RiskLevel.EXTREME
-    if "高风险" in q or "4级" in q or "等级4" in q or "level4" in q:
-        return RiskLevel.EXTREME
-    if "中风险" in q or "3级" in q or "等级3" in q or "level3" in q:
+    if "高风险" in q or "3级" in q or "等级3" in q or "level3" in q:
         return RiskLevel.HIGH
-    if "低风险" in q or "2级" in q or "等级2" in q or "level2" in q:
+    if "中风险" in q or "2级" in q or "等级2" in q or "level2" in q:
         return RiskLevel.MEDIUM
-    if "1级" in q or "等级1" in q or "level1" in q:
+    if "低风险" in q or "1级" in q or "等级1" in q or "level1" in q:
         return RiskLevel.LOW
+    # 兼容 "4级" 等数字等级表述
+    if "4级" in q or "等级4" in q or "level4" in q:
+        return RiskLevel.EXTREME
     return RiskLevel.MEDIUM
 
 
@@ -334,15 +306,19 @@ def search_regulation(query: str = "", **kwargs) -> dict:
     if not level:
         level = _parse_risk_level(query)
 
-    # 类型为空时采用保守默认
-    if not defect_type:
-        defect_type = "裂纹"  # 默认按最严重的判断路径返回，确保不会给出过低的建议
-        logger.warning("无法从输入中解析缺陷类型，使用默认类型‘裂纹’进行法规检索")
-
     level = int(level)
     if level not in RiskLevel.TEXT_MAP:
         level = RiskLevel.MEDIUM
         logger.warning(f"风险等级 {level} 非法，已重置为中风险(2)")
+
+    # 缺陷类型为空：返回通用工程建议，不再默认映射为“裂纹”
+    if not defect_type:
+        logger.warning("无法从输入中解析缺陷类型，返回通用工程建议")
+        return {
+            "law_references": "无明确法规依据",
+            "mandatory_measures": "基于工程经验评估",
+            "inspection_advice": "请咨询专业工程师",
+        }
 
     logger.info(
         "法规检索: 缺陷类型=%s, 等级=%s(%s)",

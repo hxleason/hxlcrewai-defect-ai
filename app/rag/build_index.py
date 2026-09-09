@@ -1,4 +1,3 @@
-# ==================== app/rag/build_index.py ====================
 """
 法规文档向量索引构建脚本（使用本地模型，无需联网）
 运行方式：python -m app.rag.build_index
@@ -14,18 +13,12 @@ if str(PROJECT_ROOT) not in sys.path:
 # ---------------- 第三方库 ----------------
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-# ✅ 使用新版 langchain-huggingface 中的 HuggingFaceEmbeddings（避免弃用警告）
 from langchain_huggingface import HuggingFaceEmbeddings
-
 from langchain_community.vectorstores import FAISS
 
 # ---------------- 项目内部 ----------------
 from app.core.config import settings, FAISS_INDEX_PATH, REGULATIONS_DOC_PATH
-
-
-# ✅ 硬编码你的本地模型路径（请根据实际情况检查）
-LOCAL_MODEL_PATH = Path(r"C:\hugging镜像\bge-small-zh-v1.5")
+from app.rag.vector_store import _get_local_model_path  # 复用统一的模型路径解析
 
 
 def build_index():
@@ -51,17 +44,13 @@ def build_index():
     chunks = text_splitter.split_documents(documents)
     print(f"✅ 分割完成，共 {len(chunks)} 个文本块")
 
-    # 3. ✅ 初始化本地嵌入模型（不再依赖 settings.EMBEDDING_MODEL_NAME）
-    if not LOCAL_MODEL_PATH.exists():
-        raise FileNotFoundError(
-            f"本地模型文件夹不存在: {LOCAL_MODEL_PATH}\n"
-            f"请确保已将模型复制到该路径，或修改代码中的 LOCAL_MODEL_PATH 变量。"
-        )
+    # 3. 通过统一函数获取本地嵌入模型路径（不再硬编码）
+    local_model_path = _get_local_model_path()
+    print(f"🧠 使用本地嵌入模型: {local_model_path}")
 
-    print(f"🧠 使用本地嵌入模型: {LOCAL_MODEL_PATH}")
     embeddings = HuggingFaceEmbeddings(
-        model_name=str(LOCAL_MODEL_PATH),          # 必须转为字符串
-        model_kwargs={'device': 'cpu'},            # 有 GPU 可改为 'cuda'
+        model_name=local_model_path,          # 函数返回 str，可直接使用
+        model_kwargs={'device': 'cpu'},       # 有 GPU 可改为 'cuda'
         encode_kwargs={'normalize_embeddings': True}
     )
 

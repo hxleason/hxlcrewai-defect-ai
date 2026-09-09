@@ -2,16 +2,18 @@
 集中化配置中心（终极版 v4.3）
 - 所有环境变量均可通过 .env 或系统环境注入，敏感信息严禁硬编码
 - 自动兼容旧变量名（如 LLM_MODEL_NAME → LLM_MODEL），并发出升级警告
-- 开发默认使用异步 SQLite，生产请务必通过环境变量切换为 PostgreSQL（asyncpg 等）
+- 开发默认使用同步 SQLite，生产请务必通过环境变量切换为 PostgreSQL（同步驱动如 psycopg2）
 - 统一所有数据路径到 PROJECT_ROOT/data 下，确保跨平台兼容
 - 包含风险管理相关阈值配置（HIGH_RISK_THRESHOLD、FORCE_SUSPEND_S9）
 - 新增：PWHT 焊后热处理标准知识库路径配置（data/pwht_kb）
+- 新增：法规文档路径（REGULATIONS_DOC_PATH）纳入 settings 统一管理，修复缺失问题
 
 v4.3 变更说明（本次）：
 - LLM_MAX_TOKENS 默认提升至 16000，为推理模型预留充足输出预算。
 - 新增 LLM_ENABLE_THINKING 配置项，支持显式关闭推理（部分平台支持）。
 - 新增 LLM_MAX_RETRIES 与 LLM_RETRY_DELAY，统一控制 LLM 调用重试。
 - 新增模型兼容性验证器，确保 max_tokens 在合理范围内（4096~128000）。
+- 修复 REGULATIONS_DOC_PATH 未在 Settings 类中定义的问题，现可通过 settings.REGULATIONS_DOC_PATH 访问。
 """
 import os
 import logging
@@ -74,7 +76,8 @@ class Settings(BaseSettings):
 
     # ========== 数据库 ==========
     DEFAULT_DB_PATH: Path = PROJECT_ROOT / "data" / "app.db"
-    DATABASE_URL: str = f"sqlite+aiosqlite:///{DEFAULT_DB_PATH.as_posix()}"
+    # ★ 改为同步 SQLite 驱动，与 app/db/database.py 中的同步 create_engine 匹配
+    DATABASE_URL: str = f"sqlite:///{DEFAULT_DB_PATH.as_posix()}"
     DB_POOL_SIZE: int = 20
     DB_MAX_OVERFLOW: int = 40
     DB_ECHO: bool = False
@@ -85,12 +88,15 @@ class Settings(BaseSettings):
     RETRIEVAL_TOP_K: int = 5
     AUTO_BUILD_INDEX: bool = False
 
-    STANDARDS_FOLDER: str = str(PROJECT_ROOT / "data" / "standards")
-    CHROMA_PERSIST_DIR: str = str(PROJECT_ROOT / "data" / "chroma_db")
-    FAISS_INDEX_PATH: str = str(PROJECT_ROOT / "data" / "faiss_index")
+    STANDARDS_FOLDER: Path = PROJECT_ROOT / "data" / "standards"
+    CHROMA_PERSIST_DIR: Path = PROJECT_ROOT / "data" / "chroma_db"
+    FAISS_INDEX_PATH: Path = PROJECT_ROOT / "data" / "faiss_index"
 
     # ★ 新增：PWHT 焊后热处理结构化标准知识库文件夹
-    PWHT_KB_FOLDER: str = str(PROJECT_ROOT / "data" / "pwht_kb")
+    PWHT_KB_FOLDER: Path = PROJECT_ROOT / "data" / "pwht_kb"
+
+    # ★ 新增：法规文档路径（供 build_index.py 等使用）
+    REGULATIONS_DOC_PATH: Path = PROJECT_ROOT / "app" / "rag" / "documents" / "regulations.txt"
 
     # ========== 文档切分参数 ==========
     CHUNK_SIZE: int = 500
@@ -157,13 +163,15 @@ class Settings(BaseSettings):
 # ─────────── 3. 全局单例 ───────────
 settings = Settings()
 
-# ─────────── 4. 兼容旧路径常量 ───────────
-DEFAULT_WALL_THICKNESS = None
+# ─────────── 4. 兼容旧路径常量（供直接 import 的模块使用） ───────────
+DEFAULT_WALL_THICKNESS = None                                   # 保留占位（未使用）
 RULES_PATH = PROJECT_ROOT / "app" / "core" / "rules.json"
-REGULATIONS_DOC_PATH = PROJECT_ROOT / "app" / "rag" / "documents" / "regulations.txt"
-LAW_FOLDER = PROJECT_ROOT / "regulations"
-STANDARDS_FOLDER = Path(settings.STANDARDS_FOLDER)
-CHROMA_PERSIST_DIR = Path(settings.CHROMA_PERSIST_DIR)
-FAISS_INDEX_PATH = Path(settings.FAISS_INDEX_PATH)
-# ★ 新增：导出 PWHT 知识库文件夹的 Path 对象
-PWHT_KB_FOLDER = Path(settings.PWHT_KB_FOLDER)
+REGULATIONS_DOC_PATH = settings.REGULATIONS_DOC_PATH            # 统一从 settings 获取
+LAW_FOLDER = PROJECT_ROOT / "regulations"                       # 法规文件夹（备用）
+STANDARDS_FOLDER = settings.STANDARDS_FOLDER
+CHROMA_PERSIST_DIR = settings.CHROMA_PERSIST_DIR
+FAISS_INDEX_PATH = settings.FAISS_INDEX_PATH
+PWHT_KB_FOLDER = settings.PWHT_KB_FOLDER
+
+# 说明：所有路径均已纳入 Settings 管理，模块级变量仅为兼容旧代码而保留，
+#       建议新代码直接使用 settings.<VAR_NAME> 获取配置。

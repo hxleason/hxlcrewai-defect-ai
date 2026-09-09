@@ -1,13 +1,20 @@
 """
 app/routers/fmea.py
-FMEA 评估专用路由（终极版）
+FMEA 评估专用路由（终极版 v1.1）
 
 核心特性：
     - 所有耗时的 Crew 任务通过 asyncio.to_thread() 放入线程池执行，避免阻塞事件循环。
     - 每个端点独立设置超时时间，防止永久等待。
     - 统一将 FMEABaseException 转换为结构化 HTTP 错误，便于前端识别。
     - 保持 async 函数签名，兼容异步中间件及未来扩展。
-    - 直接使用新版 run_full_fmea 函数，返回完整评估结果（含 AP 与审核标记）。
+    - 使用新版 run_full_fmea 函数，返回完整评估结果（含法规审核与审核标记）。
+
+v1.1 修复说明（本次）：
+    - 修复 evaluate_fmea / evaluate_fmea_full 中错误调用 .model_dump() 导致的
+      AttributeError（run_full_fmea 返回 dict，而非 Pydantic 对象）。
+    - 更新模块 docstring 与端点注释，使其与实际调用行为一致。
+    - 保留 /evaluate 与 /evaluate/full 两个端点以维持 API 向后兼容，
+      两者当前调用统一入口 run_full_fmea，仅超时时间不同。
 """
 
 import asyncio
@@ -61,7 +68,7 @@ async def run_in_thread(
         timeout:  超时时间（秒），默认 120 秒
 
     返回:
-        func 的原始返回值
+        func 的原始返回值（原样透传，调用方需自行判断具体类型）
 
     抛出:
         HTTPException(504)：任务超时
@@ -74,7 +81,11 @@ async def run_in_thread(
             timeout=timeout,
         )
     except asyncio.TimeoutError:
-        logger.error(f"任务超时：{getattr(func, '__name__', 'unknown')} 执行超过 {timeout}s")
+        logger.error(
+            "任务超时：%s 执行超过 %ss",
+            getattr(func, "__name__", "unknown"),
+            timeout,
+        )
         raise HTTPException(
             status_code=504,
             detail={
@@ -84,37 +95,48 @@ async def run_in_thread(
         )
     except FMEABaseException as e:
         # 自定义业务异常，直接映射为 HTTP 异常
-        logger.warning(f"业务异常 [{e.error_code}]: {str(e)}")
+        logger.warning("业务异常 [%s]: %s", e.error_code, e)
         raise HTTPException(
             status_code=e.status_code,
             detail={
                 "error_code": e.error_code,
-                "message": str(e),
+                "message": e.message,
+                "detail": e.detail,
             },
         )
     except Exception as e:
         # 未预期的系统错误
-        logger.exception(f"系统内部错误: {str(e)}")
+        logger.exception("系统内部错误: %s", e)
         raise HTTPException(
             status_code=500,
             detail={
                 "error_code": "INTERNAL_ERROR",
-                "message": f"系统内部错误: {str(e)}",
+                "message": f"系统内部错误: {e}",
             },
         )
 
 
 @router.post(
     "/evaluate",
-    summary="FMEA 评估（不含法规审核）",
-    response_description="完整的 FMEA 评估结果清单",
+    summary="FMEA 评估（含缺陷提取、规则评级与法规审核）",
+    response_description="完整的 FMEA 评估结果字典，包含 defects / report_summary / failed_count / failed_defect_ids",
 )
 async def evaluate_fmea(input_data: TextInput) -> Dict[str, Any]:
     """
-    接收报告文本，返回 FMEA 评估结果：
-    - 自动提取缺陷
-    - 调用风险评定工具和诊断工具
-    - 内置 JSON 修复机制，杜绝解析失败
+    接收报告文本，返回 FMEA 完整评估结果（同步路径）。
+
+    内部流程（由 run_full_fmea 完成）：
+    1. LLM 缺陷提取（仅一次 LLM 调用）
+    2. 规则引擎评级（evaluate_one_defect，确定性计算）
+    3. 规则引擎审计（audit_one_defect，含法规检索与 PWHT 建议）
+
+    返回结构（dict）：
+    {
+        "defects": [...],           // 审计后的完整缺陷列表
+        "report_summary": "...",    // 汇总信息
+        "failed_count": 0,          // 处理失败的缺陷数
+        "failed_defect_ids": []     // 失败缺陷的 ID 列表
+    }
 
     可能返回的错误码：
     - LLM_TIMEOUT (504)
@@ -124,31 +146,35 @@ async def evaluate_fmea(input_data: TextInput) -> Dict[str, Any]:
     - INTERNAL_ERROR (500)
     """
     result = await run_in_thread(
-        run_full_fmea,  # 新版统一入口
+        run_full_fmea,  # 新版统一入口（返回 dict）
         input_data.text,
         timeout=300,  # 根据实际 LLM 耗时调整，给予 5 分钟
     )
-    # run_full_fmea 返回 FMEAAnalysisResult 对象，需要序列化为字典
-    return result.model_dump()
+    # run_full_fmea 返回纯 dict，直接返回即可（无需 .model_dump()）
+    return result
 
 
 @router.post(
     "/evaluate/full",
-    summary="完整 FMEA 评估（预留法规审核）",
-    response_description="包含 FMEA 评估结果，暂不包含法规审核详情",
+    summary="完整 FMEA 评估（同步路径，超时更长）",
+    response_description="与 /evaluate 返回结构完全一致",
 )
 async def evaluate_fmea_full(input_data: TextInput) -> Dict[str, Any]:
     """
-    在 FMEA 基础上预留法规审核功能，当前版本与 /evaluate 行为一致。
-    后续可通过扩展 run_full_fmea 或添加额外步骤实现法规条文查询。
+    与 /evaluate 行为一致，仅超时时间更长（420s），适合较长报告或复杂缺陷场景。
+
+    注：两个端点当前调用同一入口 run_full_fmea。
+    保留本端点是为了 API 向后兼容，并为未来分离
+    「轻量评估」与「完整评估」路径预留接口空间。
 
     可能额外出现的错误码：
     - REGULATION_LOOKUP_ERROR (503)
     - 同 /evaluate 的其他错误码
     """
     result = await run_in_thread(
-        run_full_fmea,  # 新版统一入口
+        run_full_fmea,  # 新版统一入口（返回 dict）
         input_data.text,
-        timeout=420,  # 预留法规查询时间，给予 7 分钟
+        timeout=420,  # 预留更充裕的 LLM 与法规查询时间（7 分钟）
     )
-    return result.model_dump()
+    # run_full_fmea 返回纯 dict，直接返回即可
+    return result

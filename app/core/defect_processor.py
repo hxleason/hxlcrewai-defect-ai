@@ -19,8 +19,9 @@ v7.2 历史功能（保留）：
 - 清理未使用的导入，修正注释中的 PVHT -> PWHT。
 
 v7.1 历史功能（保留）：
-- 新增缺陷类型归一化（normalize_defect_type），将 "表面裂纹"、"内部裂纹" 等
-  别名统一映射为标准类型（如 "裂纹"），避免同一缺陷因表述不同被重复评估。
+- 缺陷类型归一化已迁移至公共模块 app.core.defect_type_utils。
+  该模块统一维护别名映射和标准类型列表，defect_processor 与 regulation 共用，
+  避免“未熔合”误映射等分叉问题。
 - 修复模块自测时缺少 `import json` 的运行时错误。
 
 v7.0 历史功能（保留）：
@@ -47,63 +48,14 @@ import json
 import logging
 from typing import Dict, Any, List, Optional
 
-# ⚠️ 注意：此处不导入 app.crews，避免与 crews.py 产生循环依赖。
-# 需要在 extract_defects 函数内部延迟导入（见函数实现）。
-# from app.crews import create_analysis_crew  # 已移除顶层导入
+# 导入统一的缺陷类型归一化函数（v7.1 起已迁移至公共模块）
+from app.core.defect_type_utils import normalize_defect_type
 
 from app.core.utils import fmea_calculator, diagnosis_reasons
 from app.core.regulation import search_regulation
 from app.core.knowledge_base import get_knowledge_base
 
 logger = logging.getLogger(__name__)
-
-# ══════════════════════════════════════════════════════════════════════
-# 缺陷类型归一化（v7.1 新增）
-# ══════════════════════════════════════════════════════════════════════
-DEFECT_TYPE_ALIASES: Dict[str, str] = {
-    # ── 裂纹类 ──
-    "表面裂纹": "裂纹",
-    "内部裂纹": "裂纹",
-    "纵向裂纹": "裂纹",
-    "环向裂纹": "裂纹",
-    "横向裂纹": "裂纹",
-    "表面裂缝": "裂纹",
-    "微裂纹": "裂纹",
-    "龟裂": "裂纹",
-    # ── 腐蚀类 ──
-    "腐蚀减薄": "腐蚀",
-    "均匀腐蚀": "腐蚀",
-    "局部腐蚀": "腐蚀",
-    "点腐蚀": "点蚀",
-    "点状腐蚀": "点蚀",
-    # ── 气孔类 ──
-    "密集气孔": "气孔",
-    "单个气孔": "气孔",
-    "表面气孔": "气孔",
-    # ── 夹杂类 ──
-    "非金属夹杂": "夹杂",
-    "夹渣": "夹杂",
-    # ── 未熔合/未焊透类 ──
-    "未焊透": "未焊透",
-    "未熔合": "未熔合",
-}
-
-
-def normalize_defect_type(raw_type: str) -> str:
-    """
-    将 LLM 提取的缺陷类型字符串归一化为标准类型名称。
-
-    规则：
-      1. 去除首尾空白；
-      2. 若在别名表中存在精确匹配，则返回标准名；
-      3. 否则返回原字符串（避免信息丢失）。
-    """
-    if not raw_type:
-        return "未知缺陷"
-
-    cleaned = raw_type.strip()
-    return DEFECT_TYPE_ALIASES.get(cleaned, cleaned)
-
 
 # ══════════════════════════════════════════════════════════════════════
 # PWHT 知识库惰性加载
@@ -271,6 +223,8 @@ MATERIAL_GROUP_MAP: Dict[str, str] = {
 }
 
 # ─────────── 焊接类缺陷类型（需要 PWHT 修复工艺建议） ───────────
+# 注意：由于统一归一化后“夹杂”会映射为“夹渣”，列表中仅保留“夹渣”即可，
+# 但为兼容性仍保留“夹杂”（不会触发，但对输入字符串检查无害）。
 WELD_REPAIR_DEFECT_TYPES = [
     "裂纹", "表面裂纹", "内部裂纹", "微裂纹",
     "气孔", "夹渣", "夹杂",
@@ -324,7 +278,7 @@ def _normalize_defect_dict(raw: Dict[str, Any]) -> Dict[str, Any]:
     """
     将 crews 提取的原始缺陷字典转换为下游函数统一使用的格式：
       - 'defect_type' → 'type'（规则引擎期望的字段名）
-      - 应用缺陷类型归一化（表面裂纹 → 裂纹）
+      - 应用缺陷类型归一化（使用公共模块 normalize_defect_type）
       - 保留顶层 length / depth / wall_thickness / quantity 等字段
       - 若原始数据存在嵌套的 'dimensions' 对象（旧版兼容），则自动展平
     """
@@ -336,7 +290,7 @@ def _normalize_defect_dict(raw: Dict[str, Any]) -> Dict[str, Any]:
     # 若都没有，设默认值
     defect.setdefault("type", "未知缺陷")
 
-    # ★ v7.1 新增：缺陷类型归一化（如 "表面裂纹" → "裂纹"）
+    # ★ v7.1 起使用公共模块的归一化函数
     defect["type"] = normalize_defect_type(defect["type"])
 
     # 2. 兼容旧版 dimensions 嵌套结构（如果存在）
@@ -952,7 +906,7 @@ if __name__ == "__main__":
 
     # ── 测试 3：缺陷类型归一化 ──
     print("\n── 测试 3：缺陷类型归一化 ──")
-    test_raw_types = ["表面裂纹", "内部裂纹", "点腐蚀", "密集气孔", "夹渣", "未知类型"]
+    test_raw_types = ["表面裂纹", "内部裂纹", "点腐蚀", "密集气孔", "夹渣", "未熔合", "未焊透"]
     for t in test_raw_types:
         norm = normalize_defect_type(t)
         print(f"  {t:10s} → {norm}")

@@ -44,4 +44,8 @@ Thumbs.db
 # ===== 测试/覆盖率 =====
 .pytest_cache/
 .coverage
-htmlcov/
+htmlcov/.env
+logs/*.jsonl
+logs/*.meta
+.env.bak
+celerybeat-schedule.dat

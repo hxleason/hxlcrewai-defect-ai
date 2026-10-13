@@ -1,5 +1,5 @@
 """
-app/crews.py – 缺陷提取与 FMEA 分析双智能体（终极版 v8.3）
+app/crews.py – 缺陷提取与 FMEA 分析双智能体（v8.4 · 审核门与一致性统一版）
 
 核心功能：
 1. 缺陷提取（稳健 JSON 解析，兼容不支持 response_format 的 LLM）
@@ -10,7 +10,7 @@ app/crews.py – 缺陷提取与 FMEA 分析双智能体（终极版 v8.3）
 6. 端到端流水线（run_full_fmea）-- 统一同步/异步评级路径，走规则引擎
 7. 向后兼容旧版 API（run_fmea_evaluation / run_full_fmea_evaluation）
 
-v8.3 修复说明（本次）：
+v8.3 修复说明（保留）：
 - wall_thickness 提取修复：Prompt 中字段定义改为「壁厚/设计壁厚」，
   明确缺陷描述中的「壁厚XXmm」也应提取；新增 _propagate_wall_thickness()
   在提取后对唯一壁厚值做自动传播，双保险避免全部丢失。
@@ -18,23 +18,14 @@ v8.3 修复说明（本次）：
 - get_llm() 增加 timeout 参数（推理模型 300s / 非推理 120s，可被 LLM_TIMEOUT
   覆盖），带 try/except 兼容降级，避免旧版 CrewAI 不支持时崩溃。
 
-v8.2.1 历史修复说明（保留）：
-- 移除 model_kwargs 传递：CrewAI 1.15.x 的 LLM 类不支持该参数，
-  会将其透传给 OpenAI SDK 导致 Completions.create() 报错。
-
-v8.2 历史修改说明（保留）：
-- 增强 get_llm()：识别推理模型（如 deepseek-reasoner / v4-pro / r1 / o1 等），
-  自动提升 max_tokens 至 16000 以上，为思考过程预留充足空间。
-- 新增 _safe_raw_text()：从 Crew 结果中安全提取原始输出文本，
-  同时兼容 content / reasoning_content 字段，避免空响应导致解析崩溃。
-- 新增 _is_empty_llm_response()：检测 LLM 空响应并给出针对性业务异常。
-- extract_defects() 与 analyze_fmea() 增加空响应防御和兜底返回。
-
-v8.1 历史修改说明（保留）：
-- 将 run_full_fmea 的主流程改为：LLM 提取缺陷 → 规则引擎评级（evaluate_one_defect）
-  → 规则引擎审计（audit_one_defect），与异步任务完全一致，确保可解释性。
-- 统一风险等级为四级体系：低风险（RPN≤50）、中风险（51~100）、高风险（101~200）、极高风险（>200）。
-- 新增 _rpn_to_risk_level 工具函数，在缺陷项缺省 risk_level 时根据 RPN 自动补全。
+v8.4 修复说明（本次）：
+- 删除本地 _propagate_wall_thickness，统一从 app.core.defect_utils 导入，
+  与 tasks/analysis.py 共用同一实现（评估报告 6.3）。
+- run_full_fmea 尾部改用统一审核闸门 app.core.review_gate.needs_review，
+  同步路径与异步路径判定一致（评估报告 6.1），返回 review_pending 与
+  review_required_ids，前端必须据此引导人工审核。
+- run_full_fmea 在处理前先分配临时缺陷 ID，修复失败缺陷 id 可能为 None
+  导致 failed_defect_ids 出现空值的问题。
 """
 
 import re
@@ -60,6 +51,14 @@ from app.schemas import DefectExtractionResult, DefectBase
 
 # v8.1 新增：导入规则引擎的评估与审计函数，确保同步/异步一致
 from app.core.defect_processor import evaluate_one_defect, audit_one_defect
+from app.core.audit import record_assessment
+
+# v8.4 新增：统一审核闸门与缺陷工具（与异步任务共用同一实现）
+from app.core.review_gate import needs_review
+from app.core.defect_utils import (
+    propagate_wall_thickness as _propagate_wall_thickness,
+    assign_temp_defect_ids,
+)
 
 # -------------------------------------------------------------------
 # 内部 FMEA 分析模型（含 AP 与 review_required，独立于 API 模型）
@@ -278,48 +277,6 @@ def _raise_for_empty_response(raw: str) -> None:
             "建议：1) 增加 LLM_MAX_TOKENS 至 16000 以上；"
             "2) 或改用非推理模型（如 deepseek-chat）。"
         )
-
-
-# ══════════════════════════════════════════════════
-# v8.3 新增：壁厚自动传播
-# ══════════════════════════════════════════════════
-def _propagate_wall_thickness(defects: List[Dict]) -> List[Dict]:
-    """
-    壁厚自动传播（v8.3）。
-
-    当多条缺陷中仅存在一个唯一有效壁厚值时，通常该值是整台设备的
-    公称壁厚，将其传播到其他缺失壁厚的缺陷。
-    若存在多个不同的壁厚值（例如不同部件），则保守不传播。
-
-    注：本函数是提取层的兜底；下游任务层也有独立的传播逻辑。
-    """
-    if not defects:
-        return defects
-
-    values = {
-        d.get("wall_thickness")
-        for d in defects
-        if d.get("wall_thickness") is not None
-    }
-
-    # 仅当有且只有一个唯一壁厚值时传播
-    if len(values) != 1:
-        return defects
-
-    target = values.pop()
-    propagated_count = 0
-    for d in defects:
-        if d.get("wall_thickness") is None:
-            d["wall_thickness"] = target
-            propagated_count += 1
-
-    if propagated_count:
-        logger.info(
-            "🔄 壁厚自动传播：唯一有效壁厚 %s，已传播至 %d 条缺陷",
-            target, propagated_count,
-        )
-
-    return defects
 
 
 # ══════════════════════════════════════════════════
@@ -696,7 +653,7 @@ def extract_defects(report_text: str) -> DefectExtractionResult:
     # 统一使用 robust 解析，处理各类格式异常
     parsed = extract_json_robust(raw)
 
-    # ── v8.3 新增：壁厚自动传播（兜底保护）──
+    # ── v8.3 新增：壁厚自动传播（兜底保护，v8.4 起使用公共实现）──
     if isinstance(parsed, dict) and isinstance(parsed.get("defects"), list):
         parsed["defects"] = _propagate_wall_thickness(parsed["defects"])
 
@@ -971,14 +928,16 @@ def run_full_fmea(report_text: str) -> Dict[str, Any]:
     1. LLM 提取缺陷（extract_defects）
     2. 规则引擎评级（evaluate_one_defect）
     3. 规则引擎审计（audit_one_defect）
-    4. 返回与异步任务一致的结果结构
+    4. 返回与异步任务一致的结果结构（含统一审核闸门判定）
 
     Returns:
         dict: {
             "defects": [...],
             "report_summary": str,
             "failed_count": int,
-            "failed_defect_ids": []
+            "failed_defect_ids": list,
+            "review_pending": bool,
+            "review_required_ids": list
         }
     """
     logger.info("🚀 开始全流程 FMEA（同步规则引擎路径）：缺陷提取 → 规则评级 → 规则审计")
@@ -994,9 +953,14 @@ def run_full_fmea(report_text: str) -> Dict[str, Any]:
             "report_summary": "未发现需评估的缺陷",
             "failed_count": 0,
             "failed_defect_ids": [],
+            "review_pending": False,
+            "review_required_ids": [],
         }
 
-    # 2. 逐个评级 + 审计
+    # 2. 先分配临时 ID，确保后续失败记录也有稳定标识
+    defects = assign_temp_defect_ids(defects)
+
+    # 3. 逐个评级 + 审计
     results = []
     failed_ids = []
     for defect in defects:
@@ -1005,6 +969,7 @@ def run_full_fmea(report_text: str) -> Dict[str, Any]:
             evaluated = evaluate_one_defect(defect)
             # 规则引擎审计
             audited = audit_one_defect(evaluated)
+            record_assessment(evaluated, audited)
             results.append(audited)
         except Exception as e:
             logger.error(f"缺陷 {defect.get('id', 'unknown')} 处理失败: {e}", exc_info=True)
@@ -1018,16 +983,22 @@ def run_full_fmea(report_text: str) -> Dict[str, Any]:
             results.append(error_defect)
             failed_ids.append(defect.get("id"))
 
-    # 3. 组装返回（与异步 full_evaluation_v2 的最终结构保持一致）
+    # 4. 组装返回：同步路径与异步路径使用同一审核闸门（评估报告 6.1）
+    review_ids = [d.get("id") for d in results if needs_review(d)]
+
     summary = f"共评估 {len(results)} 条缺陷"
     if failed_ids:
         summary += f"，其中 {len(failed_ids)} 条处理失败"
+    if review_ids:
+        summary += f"；{len(review_ids)} 条缺陷触发审核闸门，结果未经人工审核不得作为最终结论"
 
     return {
         "defects": results,
         "report_summary": summary,
         "failed_count": len(failed_ids),
         "failed_defect_ids": failed_ids,
+        "review_pending": bool(review_ids),
+        "review_required_ids": review_ids,
     }
 
 

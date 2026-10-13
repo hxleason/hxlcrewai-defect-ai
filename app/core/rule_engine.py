@@ -1,5 +1,5 @@
 """
-动态 FMEA 规则引擎 —— 基于 rules.json 可配置 (v5.0 终极版)
+动态 FMEA 规则引擎 —— 基于 rules.json 可配置 (v5.2 输入异常检测版)
 
 特性：
 - 线程安全：单例创建、热重载均使用锁保护
@@ -18,13 +18,20 @@
 - v5.0: 新增 _sort_rules_for_evaluation 排序逻辑，确保无条件规则始终
         先于有条件规则触发，无论规则文件如何排布；
         防止 DET_BASE/OCC_BASE/SEV_BASE 等无条件规则覆盖特定规则
+- v5.1: 失败关闭（评估报告 6.6）——单条规则应用失败记录进 rule_failures、
+        其余规则继续执行、最终 review_required=True；
+        condition/effect 字段白名单校验；新增 review_required/rule_failures/warnings 输出
+- v5.2（本次 · 输入异常检测）：
+        规范化过程收集输入异常（如 depth='abc' 无法转数值、dimensions 类型错误），
+        异常清单写入 warnings 并强制 review_required=True（失败关闭）。
+        此前这类脏数据被静默转 None 后正常出分，属失败开放。
 """
 
 import os
 import json
 import logging
 import threading
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.core.config import RULES_PATH
 
@@ -32,7 +39,7 @@ logger = logging.getLogger("defect_fmea.rule_engine")
 
 
 class RuleEngine:
-    """基于 rules.json 的动态 FMEA 计算引擎（线程安全 + 数据适配版）"""
+    """基于 rules.json 的动态 FMEA 计算引擎（线程安全 + 数据适配 + 失败关闭版）"""
 
     def __init__(self, rules_path: Optional[str] = None):
         self.rules_path = rules_path or RULES_PATH
@@ -129,7 +136,19 @@ class RuleEngine:
     @staticmethod
     def _normalize_defect(defect: Dict[str, Any]) -> Dict[str, Any]:
         """
-        将缺陷字典转换为规则引擎可用的扁平格式。
+        向后兼容入口：仅返回规范化后的数据字典（丢弃异常清单）。
+        内部逻辑见 _normalize_defect_checked。
+        """
+        data, _anomalies = RuleEngine._normalize_defect_checked(defect)
+        return data
+
+    @classmethod
+    def _normalize_defect_checked(
+        cls, defect: Dict[str, Any]
+    ) -> Tuple[Dict[str, Any], List[str]]:
+        """
+        v5.2：将缺陷字典转换为规则引擎可用的扁平格式，同时收集输入异常清单。
+
         标准内部字段为:
             - type      : 缺陷类型字符串
             - depth     : 缺陷深度 (mm)
@@ -139,9 +158,18 @@ class RuleEngine:
 
         兼容旧版嵌套 dimensions 结构，及不同的键名 (depth_mm/length_mm 等)。
         兼容缺陷类型字段名：type 或 defect_type。
+
+        返回:
+            (规范化数据字典, 异常清单)
+            异常清单记录"无法转换的脏数据"（如 depth='abc'），
+            供 evaluate 写入 warnings 并触发失败关闭复核。
         """
+        anomalies: List[str] = []
         data = defect.copy()
         dims = data.get("dimensions") or {}
+        if not isinstance(dims, dict):
+            anomalies.append(f"dimensions 字段类型异常（{type(dims).__name__}），已忽略")
+            dims = {}
 
         # 缺陷类型标准化：支持 type 或 defect_type 两种键名
         if data.get("type") is None:
@@ -149,20 +177,21 @@ class RuleEngine:
         if not isinstance(data["type"], str):
             data["type"] = str(data.get("type", ""))
 
-        # 数值转换辅助函数
-        def _to_float(v):
+        # 数值转换辅助函数（v5.2：失败不再静默，记入异常清单）
+        def _to_float(v, label: str):
             if v is None:
                 return None
             try:
                 return float(v)
             except (TypeError, ValueError):
-                logger.debug(f"数值转换失败，忽略: {v}")
+                logger.warning("输入数据异常，%s 数值转换失败: %r", label, v)
+                anomalies.append(f"{label} 数值无效: {v!r}")
                 return None
 
         # 深度、长度：优先顶层，其次 dimensions，再兼容旧键
         for standard_key, legacy_key in [("depth", "depth_mm"), ("length", "length_mm")]:
             if data.get(standard_key) is not None:
-                data[standard_key] = _to_float(data[standard_key])
+                data[standard_key] = _to_float(data[standard_key], standard_key)
                 continue
 
             val = dims.get(standard_key)
@@ -173,47 +202,67 @@ class RuleEngine:
             if val is None:
                 val = defect.get(legacy_key)
 
-            data[standard_key] = _to_float(val)
+            data[standard_key] = _to_float(val, standard_key)
 
         # 壁厚
         wt = data.get("wall_thickness")
         if wt is None:
             wt = dims.get("wall_thickness", defect.get("wall_thickness"))
-        data["wall_thickness"] = _to_float(wt)
+        data["wall_thickness"] = _to_float(wt, "wall_thickness")
 
         # 数量始终为整数
         try:
             data["quantity"] = int(defect.get("quantity", 1))
         except (TypeError, ValueError):
+            anomalies.append(f"quantity 数值无效: {defect.get('quantity')!r}")
             data["quantity"] = 1
 
-        return data
+        return data, anomalies
 
     # ------------------- 核心评估 -------------------
     def evaluate(self, defect: Dict[str, Any]) -> Dict[str, Any]:
         """
-        对单条缺陷执行 FMEA 评分。
-        - 内部先调用 _normalize_defect 处理数据结构。
-        - 使用排序后的规则快照，保证无条件规则先触发。
-        - 缺失关键数值的规则会被安全跳过（保守原则）。
+        对单条缺陷执行 FMEA 评分（v5.2 失败关闭版）。
+
+        - 内部先调用 _normalize_defect_checked 处理数据结构并收集输入异常。
+        - 使用排序后的规则快照，保证无条件规则先触发（v5.0 语义不变）。
+        - 单条规则应用失败（未知 condition/effect 字段、类型错误、数值越界）：
+          记录到 rule_failures 并继续执行其余规则（v5.1 语义）。
+        - 存在以下任一情况 → review_required=True（失败关闭）：
+            ① 有规则失败（rule_failures 非空）
+            ② 无任何规则命中（规则集可能损坏）
+            ③ 输入数据存在异常（v5.2 新增，如 depth='abc'）
+        - 多条规则对 severity/occurrence/detection 的覆盖是 v5.0 排序下的
+          **预期行为**（基线先赋值、特定规则后覆盖），不属于冲突。
         """
-        data = self._normalize_defect(defect)
+        data, anomalies = self._normalize_defect_checked(defect)
         # v5.0：排序保证无条件规则（SEV_BASE/OCC_BASE/DET_BASE）先触发
         current_rules = self._sort_rules_for_evaluation(self.rules)
         s, o, d = 1, 1, 1
         triggered = []
+        rule_failures = []
+        warnings = [f"输入数据异常: {a}" for a in anomalies]
 
         for rule in current_rules:
-            if self._match(rule.get("condition", {}), data):
+            try:
+                condition = rule.get("condition")
+                if condition is not None and not self._match(condition, data):
+                    continue
+
+                eff = rule.get("effect")
+                if not isinstance(eff, dict) or not eff:
+                    raise ValueError("effect 缺失或格式错误")
+                # v5.1：effect 白名单与数值校验（不合法即失败关闭）
+                self._validate_effect(rule, eff)
+
                 triggered.append(rule)
-                eff = rule.get("effect", {})
                 # 绝对赋值
                 if "severity" in eff:
-                    s = eff["severity"]
+                    s = int(eff["severity"])
                 if "occurrence" in eff:
-                    o = eff["occurrence"]
+                    o = int(eff["occurrence"])
                 if "detection" in eff:
-                    d = eff["detection"]
+                    d = int(eff["detection"])
                 # 增量调整
                 if "severity_delta" in eff:
                     s += eff["severity_delta"]
@@ -221,13 +270,27 @@ class RuleEngine:
                     o += eff["occurrence_delta"]
                 if "detection_delta" in eff:
                     d += eff["detection_delta"]
+            except Exception as exc:
+                # v5.1：单条规则失败 → 记录并继续，最终强制复核（失败关闭）
+                rule_id = rule.get("rule_id") or rule.get("description") or "unknown"
+                rule_failures.append({"rule_id": rule_id, "error": str(exc)})
+                logger.error("❌ 规则 %s 应用失败（失败关闭，已记录）: %s", rule_id, exc)
 
-        s = max(1, min(10, s))
-        o = max(1, min(10, o))
-        d = max(1, min(10, d))
+        s = max(1, min(10, int(round(s))))
+        o = max(1, min(10, int(round(o))))
+        d = max(1, min(10, int(round(d))))
         rpn = s * o * d
         level = self._rpn_to_level(rpn)
-        sources = list({r.get("source", "未知") for r in triggered})
+        sources = list({str(r.get("source") or "未知") for r in triggered})
+
+        # v5.1/v5.2：失败关闭判定
+        if not triggered:
+            warnings.append("未触发任何规则，S/O/D 使用兜底初始值")
+        if anomalies:
+            warnings.append("输入数据存在异常字段，结果需人工复核（失败关闭）")
+        review_required = bool(rule_failures) or not triggered or bool(anomalies)
+        if review_required:
+            warnings.append("存在规则失败或输入异常，结果需人工复核（失败关闭）")
 
         return {
             "severity": s,
@@ -236,33 +299,95 @@ class RuleEngine:
             "rpn": rpn,
             "risk_level": self._level_map[level],
             "level": level,
-            "triggered_rules": [r["rule_id"] for r in triggered],
+            "triggered_rules": [r.get("rule_id") or r.get("description") or "unknown" for r in triggered],
             "standard_ref": ", ".join(sources),
+            # v5.1 新增字段（向后兼容：旧消费方不受影响）
+            "review_required": review_required,
+            "rule_failures": rule_failures,
+            "warnings": warnings,
         }
 
-    # ------------------- 条件匹配 -------------------
+    # ------------------- v5.1 白名单与校验 -------------------
+    _KNOWN_CONDITION_KEYS = {
+        "type_contains", "depth_min", "depth_wall_ratio_min",
+        "length_min", "length_max", "quantity_min", "quantity_eq",
+    }
+
+    _ALLOWED_EFFECT_KEYS = {
+        "severity", "occurrence", "detection",
+        "severity_delta", "occurrence_delta", "detection_delta",
+    }
+
     @staticmethod
-    def _match(condition: Dict[str, Any], data: Dict[str, Any]) -> bool:
+    def _coerce_number(val: Any, key: str) -> float:
+        """数值条件值强转；失败抛 ValueError（失败关闭）。"""
+        if isinstance(val, bool):
+            raise ValueError(f"condition[{key}] 不允许布尔值，收到 {val!r}")
+        try:
+            return float(val)
+        except (TypeError, ValueError):
+            raise ValueError(f"condition[{key}] 必须为数值，收到 {val!r}")
+
+    @classmethod
+    def _validate_effect(cls, rule: Dict[str, Any], effect: Dict[str, Any]) -> None:
+        """
+        v5.1：effect 白名单校验。
+        未知字段 / 非数值 / 绝对赋值越界（1~10）/ 非整数绝对赋值
+        → 抛 ValueError，由 evaluate 记录为规则失败（失败关闭）。
+        """
+        unknown = set(effect) - cls._ALLOWED_EFFECT_KEYS
+        if unknown:
+            raise ValueError(f"未知 effect 字段: {sorted(unknown)}")
+        for key, val in effect.items():
+            if isinstance(val, bool) or not isinstance(val, (int, float)):
+                raise ValueError(f"effect[{key}] 必须为数值，收到 {val!r}")
+            if key in ("severity", "occurrence", "detection"):
+                if not (1 <= val <= 10):
+                    raise ValueError(f"effect[{key}] 超出 1~10 范围: {val}")
+                if float(val) != int(val):
+                    raise ValueError(f"effect[{key}] 必须为整数: {val}")
+
+    # ------------------- 条件匹配 -------------------
+    @classmethod
+    def _match(cls, condition: Dict[str, Any], data: Dict[str, Any]) -> bool:
         """
         判断规范化后的数据 data 是否满足一条规则的所有条件。
-        关键安全策略：对于数值比较（depth_min 等），若所需字段为 None，
-        则视为不满足，防止因数据缺失而错误触发低风险规则。
+
+        关键安全策略（v5.1 强化）：
+          1) 未知 condition 字段视为规则编写错误，直接抛 ValueError
+             （失败关闭）——避免拼写错误导致规则比预期宽松地触发；
+          2) 数值比较所需字段为 None 时视为不满足（保守原则）；
+          3) 数值型 condition 值允许 "2" 等字符串，自动强转，
+             强转失败同样抛 ValueError（失败关闭）。
 
         数据字段使用规范化后的标准名称：depth, length, wall_thickness, quantity, type。
         """
+        if condition is None:
+            return True
+        if not isinstance(condition, dict):
+            raise ValueError(f"condition 必须为对象，收到 {type(condition).__name__}")
+
+        unknown = set(condition) - cls._KNOWN_CONDITION_KEYS
+        if unknown:
+            raise ValueError(f"未知 condition 字段: {sorted(unknown)}")
+
         for key, val in condition.items():
             if key == "type_contains":
                 dtype = data.get("type", "")
                 if isinstance(val, list):
-                    if not any(sub in dtype for sub in val):
+                    if not any(str(sub) in dtype for sub in val):
                         return False
-                else:
+                elif isinstance(val, str):
                     if val not in dtype:
                         return False
+                else:
+                    raise ValueError(
+                        f"condition[type_contains] 必须为字符串或字符串列表，收到 {val!r}"
+                    )
 
             elif key == "depth_min":
                 d = data.get("depth")
-                if d is None or not (d >= val):
+                if d is None or not (d >= cls._coerce_number(val, key)):
                     return False
 
             elif key == "depth_wall_ratio_min":
@@ -270,27 +395,27 @@ class RuleEngine:
                 w = data.get("wall_thickness")
                 if d is None or w is None or w <= 0:
                     return False
-                if not ((d / w) >= val):
+                if not ((d / w) >= cls._coerce_number(val, key)):
                     return False
 
             elif key == "length_min":
                 l = data.get("length")
-                if l is None or not (l >= val):
+                if l is None or not (l >= cls._coerce_number(val, key)):
                     return False
 
             elif key == "length_max":
                 l = data.get("length")
-                if l is None or not (l <= val):
+                if l is None or not (l <= cls._coerce_number(val, key)):
                     return False
 
             elif key == "quantity_min":
                 q = data.get("quantity", 1)
-                if not (q >= val):
+                if not (q >= cls._coerce_number(val, key)):
                     return False
 
             elif key == "quantity_eq":
                 q = data.get("quantity", 1)
-                if not (q == val):
+                if not (q == cls._coerce_number(val, key)):
                     return False
 
         return True

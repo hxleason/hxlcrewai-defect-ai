@@ -1,11 +1,11 @@
 """
-app/tasks/analysis.py – Celery 任务定义（终极版 v7.5 + v7.6 P0 修复）
+app/tasks/analysis.py – Celery 任务定义（v7.8 · 审核门与一致性统一版）
 ────────────────────────────────────────────────────────────────
 功能：
   - 保留原 v3.1 所有任务，向前兼容
   - full_evaluation_v2（幂等 + 字段防丢 + 故障兜底）
   - 评估失败不再吞没，自动重试直至耗尽后标记错误
-  - 评估失败/无法评定/高风险/存在警告（壁厚缺失）一律强制挂起
+  - 评估失败/无法评定/高风险/S≥9/存在警告/持久化失败 一律强制挂起
   - 最终汇总标记 partial_failure，任务不再伪装成功
   - 幂等锁确保 chord 不重复创建
   - 字段防丢 _normalize_defect_type 全链路覆盖
@@ -21,9 +21,6 @@ v7.0 更新：
 
 v7.1 更新：
   - 新增 _propagate_wall_thickness：同一报告内缺陷壁厚自动传播。
-    当某缺陷缺少 wall_thickness 而其他缺陷有值时，取最小有效壁厚
-    （保守原则）自动补充，避免因个别缺陷（如接管角焊缝）未单独
-    标注壁厚而触发不必要的强制人工审核。
   - full_evaluation_v2 在缺陷提取后、任务分发前调用壁厚传播。
   - continue_after_review 中同样调用壁厚传播。
 
@@ -36,36 +33,50 @@ v7.3 更新：
   - 新增 _create_defect_records：缺陷提取后立即写入 Defect 表，
     解决 _persist_defect_audit 找不到匹配记录的问题。
   - _persist_defect_audit 增加兜底逻辑：找不到记录时自动创建。
-  - 新增 _safe_set_attribute、_create_defect_record_from_dict 辅助函数，
-    防止模型字段不匹配报错，并减少代码重复。
+  - 新增 _safe_set_attribute、_create_defect_record_from_dict 辅助函数。
 
-v7.4 更新（本次）：
-  - evaluate_single_defect 在评估完成后立即调用 _persist_defect_audit，
+v7.4 更新：
+  - evaluate_single_defect 评估完成后立即调用 _persist_defect_audit，
     确保高风险缺陷即使被 review_and_proceed 强制挂起，也能在 Defect 表
     中查询到 FMEA 评分、风险等级及 PWHT 修复工艺建议。
     失败路径同样持久化，保持数据库状态一致。
 
 v7.5 更新：
   - 修复 review_and_proceed 中人工审核挂起阈值硬编码问题：
-    从 `rpn > 150` 改为 `rpn >= settings.HIGH_RISK_THRESHOLD`，
-    与配置及 crews.py 保持一致。
+    从 `rpn > 150` 改为 `rpn >= settings.HIGH_RISK_THRESHOLD`。
 
 v7.6 更新（P0 修复）：
-  - 修复人工审核状态机 Bug：API 端在投递 continue_after_review 前
-    已将任务状态改为 `processing`（防止并发重复提交），而本任务的
-    状态校验仍只接受 `pending_review`，导致审核后续流程永远无法执行。
-    现改为同时接受 `pending_review` 和 `processing` 两种状态。
+  - 修复人工审核状态机 Bug：continue_after_review 现同时接受
+    `pending_review` 和 `processing` 两种状态。
+
+v7.7 更新：
+  - 修正 review_and_proceed 日志与 docstring 的风险描述，
+    使日志文案与实际判断逻辑保持一致。
+
+v7.8 更新（本次 · 审核门与一致性）：
+  - 引入统一审核闸门 app/core/review_gate.needs_review：
+    review_and_proceed / continue_after_review / finalize 均走同一判定，
+    S≥9 强制挂起（FORCE_SUSPEND_S9）在此正式生效（评估报告 6.1）。
+  - 壁厚传播 / 临时 ID 分配迁移至公共模块 app/core/defect_utils.py，
+    删除本地重复实现，统一为"唯一有效壁厚值才传播"（评估报告 6.3）。
+  - 幂等锁改为原子 SET NX EX + token + Lua 校验释放（评估报告 6.7）。
+  - _persist_defect_audit 返回 bool，失败写入 persist_error，
+    finalize 阶段计入 partial_failure（评估报告 6.2）。
+  - continue_after_review 校验审核决策完整性，并记录 review_audit。
+  - finalize 结果新增 meta 运行元信息（模型 / prompt 版本 / 规则哈希）。
 """
 
 import datetime
-import re
-import traceback
+import hashlib
 import logging
+import traceback
+import uuid
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import redis
-from celery import group, chain, chord
-from celery.exceptions import SoftTimeLimitExceeded, MaxRetriesExceededError
+from celery import group, chord
+from celery.exceptions import SoftTimeLimitExceeded
 
 # 自动适配 celery_app 位置
 try:
@@ -89,13 +100,21 @@ from app.core.defect_processor import (
     audit_one_defect,
 )
 
+# ★ v7.8：统一审核闸门与缺陷工具（壁厚传播 / 临时 ID 唯一实现）
+from app.core.review_gate import needs_review
+from app.core.audit import record_assessment
+from app.core.defect_utils import (
+    propagate_wall_thickness as _propagate_wall_thickness,
+    assign_temp_defect_ids as _assign_temp_defect_ids,
+)
+
 # Redis 客户端（幂等锁）
 redis_client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=True)
 
 logger = logging.getLogger(__name__)
 
 LOCK_PREFIX = "fmea:task:lock:"
-LOCK_EXPIRE = 3600
+LOCK_TTL = 3600
 
 
 # ================== 错误码常量 ==================
@@ -140,18 +159,34 @@ def heartbeat(task_id: int):
     update_task(task_id, last_heartbeat=datetime.datetime.utcnow())
 
 
-# ================== 幂等性工具 ==================
+# ================== 幂等性工具（v7.8 原子锁） ==================
+_RELEASE_LUA = """
+if redis.call('get', KEYS[1]) == ARGV[1] then
+  return redis.call('del', KEYS[1])
+else
+  return 0
+end
+"""
+
+
 def _acquire_task_lock(task_id: int) -> bool:
+    """以原子方式加锁：SET key token NX EX ttl。返回是否获取成功。"""
     key = f"{LOCK_PREFIX}{task_id}"
-    if redis_client.setnx(key, "1") == 0:
-        return False
-    redis_client.expire(key, LOCK_EXPIRE)
-    return True
+    token = uuid.uuid4().hex
+    if redis_client.set(key, token, nx=True, ex=LOCK_TTL):
+        redis_client.set(f"{key}:token", token, ex=LOCK_TTL)
+        return True
+    return False
 
 
 def _release_task_lock(task_id: int):
+    """仅锁持有者（token 匹配）可释放，旧执行者无法误删新锁。"""
     key = f"{LOCK_PREFIX}{task_id}"
-    redis_client.delete(key)
+    token = redis_client.get(f"{key}:token")
+    if not token:
+        return
+    redis_client.eval(_RELEASE_LUA, 1, key, token)
+    redis_client.delete(f"{key}:token")
 
 
 # ================== 字段修复 ==================
@@ -184,106 +219,9 @@ def _normalize_defect_type(defect: dict) -> dict:
 
 
 # ─────────────────────────────────────────────────────────
-# ★ v7.1 新增：同一报告内缺陷壁厚自动传播
+# ★ v7.8：壁厚传播 / 临时 ID 分配已迁移至 app/core/defect_utils.py
+#   本文件通过顶部 import 复用唯一实现，不再保留本地重复定义。
 # ─────────────────────────────────────────────────────────
-
-def _coerce_positive_float(value: Any) -> Optional[float]:
-    """
-    安全地将值转换为正 float，失败则返回 None。
-
-    支持 int / float / 数字字符串（如 "18"、"18.5"、'18mm'）。
-    """
-    if value is None:
-        return None
-    if isinstance(value, bool):          # 排除 True/False
-        return None
-    if isinstance(value, (int, float)):
-        try:
-            f = float(value)
-            return f if f > 0 else None
-        except (TypeError, ValueError):
-            return None
-    if isinstance(value, str):
-        # 尝试提取第一个数字（支持 "18" / "18.5" / "18mm" 等）
-        m = re.search(r"(\d+(?:\.\d+)?)", value.strip())
-        if m:
-            try:
-                f = float(m.group(1))
-                return f if f > 0 else None
-            except ValueError:
-                return None
-    return None
-
-
-def _propagate_wall_thickness(defects: List[dict]) -> List[dict]:
-    """
-    同一报告内缺陷壁厚自动传播（保守原则）。
-
-    规则：
-      - 收集列表中所有有效 wall_thickness（正数）；
-      - 若存在有效值，取最小值（保守）作为推断壁厚；
-      - 为缺失 wall_thickness 的缺陷自动补充该值；
-      - 若列表中所有缺陷均无有效壁厚，则不修改任何数据。
-    """
-    if not defects:
-        return defects
-
-    valid_thicknesses: List[float] = []
-    for d in defects:
-        if not isinstance(d, dict):
-            continue
-        t = _coerce_positive_float(d.get("wall_thickness"))
-        if t is not None:
-            valid_thicknesses.append(t)
-
-    if not valid_thicknesses:
-        logger.warning("缺陷列表 %d 条中无任何有效壁厚，无法自动传播", len(defects))
-        return defects
-
-    inferred = min(valid_thicknesses)
-    filled_count = 0
-
-    for d in defects:
-        if not isinstance(d, dict):
-            continue
-        existing = _coerce_positive_float(d.get("wall_thickness"))
-        if existing is None:
-            d["wall_thickness"] = inferred
-            filled_count += 1
-            logger.info(
-                "缺陷 %s (type=%s) 缺少壁厚，已自动补充 %.2f mm（同报告最小有效壁厚，保守值）",
-                d.get("id"), d.get("type") or d.get("defect_type"), inferred
-            )
-
-    if filled_count:
-        logger.info("壁厚自动传播完成：共补充 %d 条缺陷，推断壁厚 %.2f mm", filled_count, inferred)
-    return defects
-
-
-# ─────────────────────────────────────────────────────────
-# ★ v7.2 新增：为缺陷分配临时顺序 ID
-# ─────────────────────────────────────────────────────────
-
-def _assign_temp_defect_ids(defects: List[dict]) -> List[dict]:
-    """
-    为缺失 id 的缺陷分配任务内的临时顺序 ID（1,2,3,...），
-    确保前端审核时能够准确指定要操作的缺陷。
-    """
-    next_id = 1
-    for d in defects:
-        if not isinstance(d, dict):
-            continue
-        # 已有有效 id 则保留，并用最大值 + 1 作为后续起点
-        existing_id = d.get("id")
-        if existing_id is not None:
-            try:
-                next_id = max(next_id, int(existing_id) + 1)
-            except (TypeError, ValueError):
-                pass
-            continue
-        d["id"] = next_id
-        next_id += 1
-    return defects
 
 
 # ─────────────────────────────────────────────────────────
@@ -328,11 +266,6 @@ def _create_defect_records(task_id: int, defects: List[dict]) -> int:
     """
     ★ v7.3 新增：缺陷提取后立即将缺陷写入 Defect 表（幂等）。
 
-    为什么需要：
-      v7.0 的 _persist_defect_audit 只能更新已存在的 Defect 记录，
-      但缺陷提取后从未入库，导致持久化永远找不到匹配记录。
-      此函数在评估开始前创建记录，审计完成后即可更新。
-
     幂等策略：
       每条缺陷的 original_text 在报告中唯一，创建前检查
       task_id + original_text 是否已存在，存在则跳过。
@@ -372,14 +305,13 @@ def _create_defect_records(task_id: int, defects: List[dict]) -> int:
 
     except Exception as e:
         logger.error("缺陷入库失败 task_id=%s: %s", task_id, e)
-        # ★ 关键：入库失败不能阻断主流程
-        # 后续 _persist_defect_audit 仍有兜底逻辑
+        # 关键：入库失败不能阻断主流程，后续 _persist_defect_audit 仍有兜底逻辑
 
     return created_count
 
 
 # ─────────────────────────────────────────────────────────
-# ★ v7.0 新增：缺陷审计结果持久化（含 v7.3 兜底）
+# ★ v7.0 新增：缺陷审计结果持久化（含 v7.3 兜底；v7.8 返回 bool）
 # ─────────────────────────────────────────────────────────
 
 def _find_defect_record(db, task_id: int, defect: dict):
@@ -387,7 +319,7 @@ def _find_defect_record(db, task_id: int, defect: dict):
     在数据库中查找匹配的缺陷记录。
 
     匹配策略（按优先级降序）：
-      1. task_id + original_text（最可靠，每个缺陷的原始文本通常唯一）
+      1. task_id + original_text（最可靠）
       2. task_id + defect_type + component + location（组合匹配）
       3. task_id + defect_type 且仅有一条记录（唯一类型）
       4. 无法匹配返回 None
@@ -436,16 +368,15 @@ def _find_defect_record(db, task_id: int, defect: dict):
     return None
 
 
-def _persist_defect_audit(task_id: int, defect: dict) -> None:
+def _persist_defect_audit(task_id: int, defect: dict) -> bool:
     """
     将审计后的缺陷完整信息（含 FMEA 评估结果、法规信息及 PWHT 建议）
     持久化到 Defect 表。
 
-    ★ v7.0 新增：除原有评估/法规字段外，额外持久化 pwht_advice 字段。
-    ★ v7.3 更新：当找不到匹配记录时，自动创建一条新记录后再更新，
-        避免因缺陷未预先入库而导致持久化失败。
+    ★ v7.3 更新：找不到匹配记录时自动创建一条新记录后再更新。
+    ★ v7.8 更新：返回 bool，失败不再被静默吞掉，调用方写入 persist_error。
 
-    该函数不抛出异常，任何持久化失败仅记录日志，不影响主任务流程。
+    返回 True 表示持久化成功，False 表示失败（不会抛出异常）。
     """
     try:
         with SessionLocal() as db:
@@ -458,7 +389,7 @@ def _persist_defect_audit(task_id: int, defect: dict) -> None:
                         "持久化缺陷审计结果时未找到匹配记录且缺少 original_text，跳过 task_id=%s defect_id=%s",
                         task_id, defect.get("id")
                     )
-                    return
+                    return False
 
                 logger.info(
                     "未找到缺陷记录，自动创建新记录 task_id=%s defect_id=%s type=%s",
@@ -498,7 +429,7 @@ def _persist_defect_audit(task_id: int, defect: dict) -> None:
             if defect.get("inspection_advice") is not None:
                 db_defect.inspection_advice = defect.get("inspection_advice")
 
-            # --- ★ v7.0 新增：PWHT 修复工艺建议 ---
+            # --- PWHT 修复工艺建议 ---
             if defect.get("pwht_advice") is not None:
                 db_defect.pwht_advice = defect.get("pwht_advice")
 
@@ -519,11 +450,14 @@ def _persist_defect_audit(task_id: int, defect: dict) -> None:
                 "已写入" if defect.get("pwht_advice") else "未生成"
             )
 
+            return True
+
     except Exception as e:
         logger.error(
             "持久化缺陷审计结果失败 task_id=%s defect_id=%s: %s",
             task_id, defect.get("id"), e
         )
+        return False
 
 
 # ================== 旧版任务（保留不动，兼容性修复） ==================
@@ -692,13 +626,15 @@ def full_evaluation_task(self, task_id: int, input_text: str) -> Dict[str, Any]:
 def full_evaluation_v2(self, task_id: int, input_text: str):
     """
     终极版完整评估（幂等 + 字段防丢 + 故障挂起）：
-    提取 → 壁厚传播 → 提前入库 → 并行评级 → 强制挂起（含失败/警告） → 并行法规 → 汇总
+    提取 → 壁厚传播 → 提前入库 → 并行评级 → 强制挂起（含失败/警告/S9） → 并行法规 → 汇总
 
-    ★ v7.3 新增：在评估前调用 _create_defect_records 将缺陷写入数据库，
+    ★ v7.3 新增：评估前调用 _create_defect_records 将缺陷写入数据库，
       确保审计完成后 _persist_defect_audit 能找到匹配记录。
 
     ★ v7.4 新增：evaluate_single_defect 内也会主动持久化评估结果，
       确保高风险缺陷在挂起前已有完整数据。
+
+    ★ v7.8 更新：挂起判定统一走 app.core.review_gate.needs_review。
     """
     if not _acquire_task_lock(task_id):
         logger.warning("任务 %s 已启动工作流，跳过重复执行", task_id)
@@ -737,14 +673,13 @@ def full_evaluation_v2(self, task_id: int, input_text: str):
             _release_task_lock(task_id)
             return {"task_id": task_id, "status": "no_defects"}
 
-        # 3. ★ v7.1 新增：壁厚自动传播（同一报告内）
+        # 3. 壁厚自动传播（唯一有效值才传播，v7.8 公共实现）
         defects = _propagate_wall_thickness(defects)
 
-        # 4. ★ v7.2 新增：为缺陷分配临时 ID（用于后续人工审核）
+        # 4. 为缺陷分配临时 ID（用于后续人工审核）
         defects = _assign_temp_defect_ids(defects)
 
-        # 5. ★ v7.3 新增：缺陷提取后立即入库
-        #    确保审计完成后的 _persist_defect_audit 能找到匹配记录
+        # 5. 缺陷提取后立即入库，确保审计后持久化能找到匹配记录
         _create_defect_records(task_id, defects)
 
         update_task(task_id, progress=20)
@@ -782,20 +717,20 @@ def evaluate_single_defect(self, task_id: int, defect: dict):
     评估单个缺陷（支持自动重试）。
 
     - 正常返回包含 FMEA 结果的完整缺陷字典。
-    - 若发生异常，Celery 自动重试（最多 max_retries 次）；
+    - 异常时 Celery 自动重试（最多 max_retries 次）；
     - 重试耗尽后，返回带有 `error` 字段的结果，不再吞没异常。
 
-    ★ v7.4 新增：评估完成后立即调用 _persist_defect_audit 持久化结果，
-      确保高风险缺陷即使被 review_and_proceed 强制挂起，也能在 Defect 表
-      中查询到 FMEA 评分、风险等级及 PWHT 建议；失败路径同样持久化。
+    ★ v7.8 更新：持久化失败写入 persist_error，由统一审核闸门强制挂起。
     """
     try:
         heartbeat(task_id)
         evaluated = evaluate_one_defect(defect)
         evaluated = _normalize_defect_type(evaluated)
 
-        # ★ v7.4 核心改动：评估结果立即持久化（含 pwht_advice）
-        _persist_defect_audit(task_id, evaluated)
+        # 评估结果立即持久化（含 pwht_advice）
+        ok = _persist_defect_audit(task_id, evaluated)
+        if not ok:
+            evaluated["persist_error"] = "评估结果持久化失败，已标记人工复核"
 
         return evaluated
 
@@ -818,8 +753,10 @@ def evaluate_single_defect(self, task_id: int, defect: dict):
             "reasons": [],
         }
 
-        # ★ v7.4 失败结果也持久化，确保数据库状态一致
-        _persist_defect_audit(task_id, error_defect)
+        # 失败结果也持久化，确保数据库状态一致
+        ok = _persist_defect_audit(task_id, error_defect)
+        if not ok:
+            error_defect["persist_error"] = "失败结果持久化失败，已标记人工复核"
 
         return error_defect
 
@@ -827,15 +764,17 @@ def evaluate_single_defect(self, task_id: int, defect: dict):
 @celery_app.task(bind=True)
 def review_and_proceed(self, evaluated_results: List[dict], task_id: int):
     """
-    chord 回调：接收所有评估结果，强制挂起高风险/失败/无法评定/存在警告的缺陷。
+    chord 回调：接收所有评估结果，通过统一审核闸门决定挂起或进入审计。
 
-    挂起条件：
+    挂起条件（统一由 needs_review 判定）：
     - 含有 error 字段（评估异常）
+    - 含有 persist_error（持久化异常）
     - risk_level == "评估失败" 或 "无法评定"
-    - RPN >= settings.HIGH_RISK_THRESHOLD  （★ v7.5 修改：原来为 > 150）
+    - RPN >= settings.HIGH_RISK_THRESHOLD
     - 存在 warning 字段且非空（例如壁厚缺失警告）
+    - FORCE_SUSPEND_S9 且 severity >= 9
 
-    只有全部缺陷均为有效、无警告且低风险时，才进入法规审计阶段。
+    仅当全部缺陷均无需人工审核时，才直接进入法规审计阶段。
     """
     heartbeat(task_id)
     logger.info("收到 %d 条评估结果，任务 %s", len(evaluated_results), task_id)
@@ -843,27 +782,18 @@ def review_and_proceed(self, evaluated_results: List[dict], task_id: int):
     # 字段防丢
     evaluated_results = [_normalize_defect_type(d) for d in evaluated_results]
 
-    # ★ v7.2 保险：确保每条缺陷都有 ID（评估阶段可能丢失）
+    # 确保每条缺陷都有 ID（评估阶段可能丢失）
     evaluated_results = _assign_temp_defect_ids(evaluated_results)
 
-    # ── 强制挂起清单 ──
-    require_review = []
-    ok_for_audit = []
-    for defect in evaluated_results:
-        has_warning = bool(defect.get("warning"))
-        if (
-            defect.get("error") or
-            defect.get("risk_level") in ("评估失败", "无法评定") or
-            (defect.get("rpn") is not None and defect.get("rpn") >= settings.HIGH_RISK_THRESHOLD) or
-            has_warning
-        ):
-            require_review.append(defect)
-        else:
-            ok_for_audit.append(defect)
+    # 统一审核闸门判定
+    require_review = [d for d in evaluated_results if needs_review(d)]
+    ok_for_audit = [d for d in evaluated_results if not needs_review(d)]
 
     if require_review:
-        logger.info("任务 %s 进入待审核状态，需审核缺陷 %d 条（高风险/失败/警告）",
-                     task_id, len(require_review))
+        logger.info(
+            "任务 %s 进入待审核状态，需审核缺陷 %d 条（高风险/S9/失败/警告/持久化异常）",
+            task_id, len(require_review),
+        )
         update_task(
             task_id,
             status="pending_review",
@@ -871,12 +801,15 @@ def review_and_proceed(self, evaluated_results: List[dict], task_id: int):
             result={
                 "evaluated": evaluated_results,
                 "high_risk_or_error_ids": [d.get("id") for d in require_review],
-                "pending_reason": "存在高风险缺陷、评估失败、无法评定或存在警告（如壁厚缺失），需人工介入",
+                "pending_reason": "存在高风险(RPN≥阈值)、S≥9、评估失败、无法评定、警告或持久化异常，需人工介入",
             },
         )
         return "review_required"
     else:
-        logger.info("所有缺陷均为低风险且无警告，直接进入法规审计，任务 %s", task_id)
+        logger.info(
+            "所有缺陷均无需人工审核（无评估失败/无法评定/错误/警告，且 RPN、S 未超过挂起阈值），进入法规审计，任务 %s",
+            task_id,
+        )
         start_audit_phase(task_id, ok_for_audit)
         return "audit_started"
 
@@ -903,19 +836,21 @@ def audit_single_defect(self, task_id: int, defect: dict):
     """
     对单个缺陷执行法规检索（纯 Python，可并行）。
 
-    ★ v7.0 更新：
-      - 审计成功后调用 _persist_defect_audit 将完整结果（含 pwht_advice）
-        持久化到 Defect 表。
-      - 审计失败（重试耗尽）时同样持久化错误状态，确保数据库记录一致。
+    ★ v7.0 更新：审计成功后持久化完整结果（含 pwht_advice）；
+      审计失败（重试耗尽）时同样持久化错误状态，确保数据库记录一致。
+    ★ v7.8 更新：持久化失败写入 persist_error，由统一审核闸门强制挂起。
     """
     try:
         heartbeat(task_id)
         defect = _normalize_defect_type(defect)
         audited = audit_one_defect(defect)
+        record_assessment(defect, audited)
         audited = _normalize_defect_type(audited)
 
-        # ★ v7.0 新增：持久化审计结果（含 pwht_advice）
-        _persist_defect_audit(task_id, audited)
+        # 持久化审计结果（含 pwht_advice）
+        ok = _persist_defect_audit(task_id, audited)
+        if not ok:
+            audited["persist_error"] = "审计结果持久化失败，已标记人工复核"
 
         return audited
 
@@ -931,8 +866,10 @@ def audit_single_defect(self, task_id: int, defect: dict):
             "mandatory_measures": "",
             "inspection_advice": "",
         }
-        # ★ v7.0 新增：失败时也持久化，确保数据库状态一致
-        _persist_defect_audit(task_id, error_defect)
+        # 失败时也持久化，确保数据库状态一致
+        ok = _persist_defect_audit(task_id, error_defect)
+        if not ok:
+            error_defect["persist_error"] = "失败结果持久化失败，已标记人工复核"
         return error_defect
 
 
@@ -941,29 +878,33 @@ def finalize_full_evaluation_v2(self, audited_defects: List[dict], task_id: int)
     """
     最终汇总回调：标记任务完成或部分失败，释放幂等锁。
 
-    - 若存在任何审计失败或评估失败的缺陷，将任务状态设为 `partial_failure`。
+    - 若存在审计失败、评估失败、无法评定或持久化失败，任务状态设为 `partial_failure`。
     - 否则标记为 `success`。
+    - 结果附带 meta 运行元信息（模型 / prompt 版本 / 规则哈希）。
     """
     heartbeat(task_id)
     try:
-        # 统计错误/失败缺陷
+        # 统计错误/失败缺陷（含持久化失败）
         failed_defects = [
             d for d in audited_defects
-            if d.get("error") or d.get("risk_level") in ("评估失败", "无法评定")
+            if d.get("error")
+            or d.get("risk_level") in ("评估失败", "无法评定")
+            or d.get("persist_error")
         ]
         has_failures = len(failed_defects) > 0
 
         summary = f"共评估 {len(audited_defects)} 条缺陷"
         if has_failures:
-            summary += f"，其中 {len(failed_defects)} 条处理失败，请查看详情并人工介入"
+            summary += f"，其中 {len(failed_defects)} 条处理失败（含持久化失败），请人工介入"
         else:
-            summary += "，全部处理成功"
+            summary += "，全部处理成功且已落库"
 
         full_result = {
             "report_summary": summary,
             "defects": audited_defects,
             "failed_count": len(failed_defects),
             "failed_defect_ids": [d.get("id") for d in failed_defects],
+            "meta": _build_run_meta(),
         }
 
         final_status = "partial_failure" if has_failures else "success"
@@ -993,14 +934,14 @@ def continue_after_review(self, task_id: int, decisions: dict = None):
     人工审核提交后，继续执行法规审计阶段。
     decisions: {"1": {"action": "accept", "comment": ""}, "2": {"action": "reject", ...}}
 
-    ★ v7.6 P0 修复：
-      API 端在投递本任务前已将任务状态由 pending_review 改为 processing
-      （防止并发重复提交），因此本任务需要同时接受 processing 状态，
-      否则会错误返回 invalid_status 导致后续审计流程永久停滞。
+    ★ v7.6 P0 修复：同时接受 pending_review 和 processing 两种状态。
+
+    ★ v7.8 更新：
+      - 审核决策必须覆盖全部待审核缺陷，否则拒绝继续并恢复 pending_review；
+      - 记录 review_audit（审核人 / 时间 / 决策）。
     """
     with SessionLocal() as db:
         task = db.query(Task).filter(Task.id == task_id).first()
-        # ★ v7.6 修复：接受 pending_review 和 processing 两种状态
         if not task or task.status not in ("pending_review", "processing"):
             logger.error(
                 "任务 %s 状态不正确 (expected pending_review or processing, got %s)",
@@ -1013,6 +954,16 @@ def continue_after_review(self, task_id: int, decisions: dict = None):
         if not evaluated:
             return "no_evaluated_data"
 
+        decisions = decisions or {}
+        # 统一判定需审核缺陷（含 S9），决策必须全覆盖，否则拒绝继续
+        pending_ids = {str(d.get("id")) for d in evaluated if needs_review(d)}
+        missing = pending_ids - set(decisions.keys())
+        if missing:
+            task.status = "pending_review"  # 恢复待审核状态
+            db.commit()
+            logger.error("任务 %s 审核决策不完整，缺少缺陷: %s", task_id, sorted(missing))
+            return "incomplete_decisions"
+
         # 应用审核决策
         if decisions:
             for defect in evaluated:
@@ -1022,22 +973,53 @@ def continue_after_review(self, task_id: int, decisions: dict = None):
                     defect["review_decision"] = d
                     if d.get("action") == "reject":
                         defect["_remove"] = True
-
             evaluated = [d for d in evaluated if not d.get("_remove")]
 
         # 防丢
         evaluated = [_normalize_defect_type(d) for d in evaluated]
 
-        # ★ v7.1 新增：审核后同样执行壁厚传播（防止审核过程中被移除缺陷导致原传播链路失效）
+        # 审核后同样执行壁厚传播（防止移除缺陷导致原传播链路失效）
         evaluated = _propagate_wall_thickness(evaluated)
 
-        # ★ v7.2 保险：再次确保 ID 存在
+        # 再次确保 ID 存在
         evaluated = _assign_temp_defect_ids(evaluated)
 
-        # 更新中间结果
-        task.result = {"evaluated": evaluated}
+        # 更新中间结果 + 审核审计
+        task.result = {
+            "evaluated": evaluated,
+            "review_audit": {
+                "reviewer": decisions.get("_reviewer", "unknown"),
+                "reviewed_at": datetime.datetime.utcnow().isoformat(),
+                "decisions": {k: v for k, v in decisions.items() if not k.startswith("_")},
+            },
+        }
         db.commit()
 
     heartbeat(task_id)
     start_audit_phase(task_id, evaluated)
     return "audit_started"
+
+
+# ================== 运行元信息 ==================
+def _file_md5(path) -> str:
+    """读取文件并返回 MD5 前 12 位；失败返回 'n/a'。"""
+    try:
+        return hashlib.md5(Path(path).read_bytes()).hexdigest()[:12]
+    except Exception:
+        return "n/a"
+
+
+def _build_run_meta() -> dict:
+    """构建本次评估的运行元信息（模型 / prompt 版本 / 规则哈希）。"""
+    from app.core.config import RULES_PATH, PROJECT_ROOT
+
+    expert = PROJECT_ROOT / "data" / "expert_rules_v2.json"
+    if not expert.exists():
+        expert = PROJECT_ROOT / "data" / "expert_rules.json"
+
+    return {
+        "model": settings.LLM_MODEL,
+        "prompt_version": "v8.3",
+        "rules_hash": _file_md5(RULES_PATH),
+        "expert_rules_hash": _file_md5(expert),
+    }

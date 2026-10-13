@@ -1,8 +1,15 @@
 """
-分析任务路由（安全增强版）
+分析任务路由（安全增强版 v2.0 · 审核决策完整性校验）
 -----------------------------------
 提供缺陷提取、FMEA评估、完整评估、人工审核任务的提交与状态查询。
 审核端点已加入并发锁与输入校验，确保数据一致性与操作幂等。
+
+v2.0 修复说明（本次）：
+    - submit_review 增加决策完整性校验（评估报告 6.1）：
+      审核决策必须覆盖任务中全部待审核缺陷，否则返回
+      INCOMPLETE_REVIEW（422），杜绝"审核漏项后继续走审计"。
+    - submit_review 支持 X-Reviewer-Name 请求头，审核人身份随决策
+      一起传给 continue_after_review，最终写入 review_audit 审计记录。
 
 风险等级统一说明：
     全系统已统一采用四级风险等级：低(1)/中(2)/高(3)/极高(4)。
@@ -11,11 +18,12 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy.orm import Session
 
 from app.core.config import settings  # 便于后续使用阈值等配置
+from app.core.review_gate import needs_review  # v2.0：统一审核闸门判定
 from app.db.database import get_db
 from app.models import Task
 from app.tasks.analysis import (
@@ -113,6 +121,9 @@ def _create_task_with_celery(
     """
     在同一个事务内创建 Task 记录并投递 Celery 任务。
     若任何环节失败则整体回滚，前端统一收到错误详情。
+
+    ★ 说明：equipment_id / lifecycle_event / input_category 等全生命周期
+    字段在 Phase 4（models.py 加列）时统一接入，当前版本不涉及。
     """
     try:
         task = Task(
@@ -208,6 +219,8 @@ def submit_full_evaluation(
     针对高风险缺陷的人工审核决策提交。
     - 任务必须处于 `pending_review` 状态。
     - 使用数据库悲观锁防止并发重复提交。
+    - 决策必须覆盖任务中全部待审核缺陷，否则返回 INCOMPLETE_REVIEW（422）。
+    - 可通过请求头 X-Reviewer-Name 传入审核人姓名，写入审核审计记录。
     - 提交成功后任务状态将立即更新为 `processing`，避免中途被二次修改。
     """,
 )
@@ -215,6 +228,7 @@ def submit_review(
     task_id: int,
     decisions: List[ReviewDecision],
     db: Session = Depends(get_db),
+    reviewer: Optional[str] = Header(None, alias="X-Reviewer-Name"),
 ):
     # ── 1. 悲观锁获取任务行，确保并发安全 ──
     task = (
@@ -238,9 +252,32 @@ def submit_review(
             },
         )
 
-    # ── 2. 转换决策为可序列化字典（key 为字符串 defect_id） ──
+    # ── 2. 决策完整性校验：必须覆盖全部待审核缺陷（评估报告 6.1）──
+    stored = task.result or {}
+    pending_ids = set(stored.get("high_risk_or_error_ids") or [])
+    if not pending_ids:
+        # 兜底：老版本结果没有 high_risk_or_error_ids 时，用统一闸门重算
+        pending_ids = {d.get("id") for d in stored.get("evaluated", []) if needs_review(d)}
+    submitted = {str(d.defect_id) for d in decisions}
+    missing = {str(i) for i in pending_ids} - submitted
+    if missing:
+        logger.error(
+            "任务 %s 审核决策不完整，缺少缺陷: %s",
+            task_id, sorted(missing),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error_code": "INCOMPLETE_REVIEW",
+                "message": f"以下待审核缺陷缺少决策: {sorted(missing)}",
+            },
+        )
+
+    # ── 3. 转换决策为可序列化字典（key 为字符串 defect_id） ──
     try:
         decision_dict = {str(d.defect_id): d.model_dump() for d in decisions}
+        # v2.0：注入审核人身份，供 continue_after_review 写入 review_audit
+        decision_dict["_reviewer"] = (reviewer or "unknown").strip()
     except Exception as e:
         logger.error("决策数据序列化失败: %s", e)
         raise HTTPException(
@@ -248,22 +285,23 @@ def submit_review(
             detail={"error_code": "DECISION_SERIALIZATION_ERROR", "message": "决策数据格式错误"},
         )
 
-    # ── 3. 更新任务状态为中间态，防止竞态 ──
+    # ── 4. 更新任务状态为中间态，防止竞态 ──
     original_status = task.status
     task.status = "processing"  # 表示正在处理审核
     try:
         db.flush()  # 确保状态变更立即生效
 
-        # ── 4. 投递异步任务 ──
+        # ── 5. 投递异步任务 ──
         celery_task = continue_after_review.delay(task_id, decision_dict)
         logger.info(
-            "审核任务 %d 已投递，Celery ID: %s，决策数量: %d",
+            "审核任务 %d 已投递，Celery ID: %s，决策数量: %d，审核人: %s",
             task_id,
             celery_task.id,
             len(decisions),
+            decision_dict.get("_reviewer", "unknown"),
         )
 
-        # ── 5. 事务提交（状态更新 + Celery 投递承诺） ──
+        # ── 6. 事务提交（状态更新 + Celery 投递承诺） ──
         db.commit()
     except Exception as exc:
         # 回滚状态变更

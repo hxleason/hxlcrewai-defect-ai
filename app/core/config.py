@@ -1,5 +1,5 @@
 ﻿"""
-集中化配置中心（终极版 v4.3）
+集中化配置中心（终极版 v4.4）
 - 所有环境变量均可通过 .env 或系统环境注入，敏感信息严禁硬编码
 - 自动兼容旧变量名（如 LLM_MODEL_NAME → LLM_MODEL），并发出升级警告
 - 开发默认使用同步 SQLite，生产请务必通过环境变量切换为 PostgreSQL（同步驱动如 psycopg2）
@@ -8,12 +8,16 @@
 - 新增：PWHT 焊后热处理标准知识库路径配置（data/pwht_kb）
 - 新增：法规文档路径（REGULATIONS_DOC_PATH）纳入 settings 统一管理，修复缺失问题
 
-v4.3 变更说明（本次）：
+v4.3 变更说明：
 - LLM_MAX_TOKENS 默认提升至 16000，为推理模型预留充足输出预算。
 - 新增 LLM_ENABLE_THINKING 配置项，支持显式关闭推理（部分平台支持）。
 - 新增 LLM_MAX_RETRIES 与 LLM_RETRY_DELAY，统一控制 LLM 调用重试。
 - 新增模型兼容性验证器，确保 max_tokens 在合理范围内（4096~128000）。
 - 修复 REGULATIONS_DOC_PATH 未在 Settings 类中定义的问题，现可通过 settings.REGULATIONS_DOC_PATH 访问。
+
+v4.4 变更说明（本次）：
+- HIGH_RISK_THRESHOLD 由 200 改为 100，与“高风险及以上强制挂起人工审核”的
+  产品策略保持一致（RPN ≥ 100 即视为高风险）。
 """
 import os
 import logging
@@ -103,7 +107,11 @@ class Settings(BaseSettings):
     CHUNK_OVERLAP: int = 50
 
     # ========== FMEA 风险评估阈值 ==========
-    HIGH_RISK_THRESHOLD: int = Field(200, description="RPN 超过此值即触发挂起审查")
+    # ★ v4.4 修改：200 → 100，与“高风险及以上强制挂起人工审核”的策略一致
+    HIGH_RISK_THRESHOLD: int = Field(
+        100,
+        description="RPN 达到或超过此值即触发挂起审查（对应高风险及以上等级）"
+    )
     FORCE_SUSPEND_S9: bool = Field(
         True,
         description="当严重度 (Severity) ≥ 9 时，无论 RPN 多少都强制挂起"

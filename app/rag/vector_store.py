@@ -6,9 +6,9 @@ RAG 向量存储模块 – FAISS 专用（安全加固版 + 线程安全单例�
 🔒 安全声明：
 - FAISS 索引文件内部使用 Pickle 序列化，加载时需传递
   `allow_dangerous_deserialization=True`，存在代码执行风险。
-- 为避免意外加载不可信的外部索引，本站点要求**必须设置环境变量
-  ALLOW_FAISS_DANGEROUS_DESERIALIZATION=1** 才能启动，以明确表示
-  您已确认索引文件来源可信。
+- 默认安全模式（default-deny）：未显式设置 ALLOW_FAISS_DANGEROUS_DESERIALIZATION=1
+  （或 true/yes）时，跳过 FAISS 加载，禁止任何 pickle 反序列化。
+- 如需启用，请确认索引文件完全可信后显式设置该变量为 1。
 - 部署时请保证 FAISS 索引目录仅由本系统写入，严禁接收用户上传的索引文件。
 
 🧵 线程安全：
@@ -93,17 +93,16 @@ def load_vector_store() -> Optional[FAISS]:
     需要先通过环境变量 ALLOW_FAISS_DANGEROUS_DESERIALIZATION 授权。
     如果索引文件不存在，则返回 None。
     """
-    # 安全锁：必须显式设置环境变量
-    if os.getenv("ALLOW_FAISS_DANGEROUS_DESERIALIZATION") != "1":
-        logger.critical(
-            "🔒 安全限制：FAISS 加载使用了危险的 Pickle 反序列化。\n"
-            "   如果您已确认索引文件完全受信，请在环境变量中设置：\n"
-            "   export ALLOW_FAISS_DANGEROUS_DESERIALIZATION=1\n"
-            "   并重启应用。"
+    # 安全锁（默认拒绝）：仅当环境变量被显式设置为真值（1/true/yes）时才允许
+    # 危险反序列化；否则跳过 FAISS 加载并返回 None，不抛异常、不影响其他功能。
+    allow_dangerous = os.getenv("ALLOW_FAISS_DANGEROUS_DESERIALIZATION", "").strip().lower()
+    if allow_dangerous not in ("1", "true", "yes"):
+        logger.warning(
+            "🔒 安全模式：FAISS 加载已跳过（危险反序列化未授权，当前值=%r）。"
+            "如需启用请显式设置 ALLOW_FAISS_DANGEROUS_DESERIALIZATION=1 并确认索引可信。",
+            allow_dangerous or "(未设置)",
         )
-        raise RuntimeError(
-            "FAISS 加载未授权！请设置 ALLOW_FAISS_DANGEROUS_DESERIALIZATION=1"
-        )
+        return None
 
     try:
         local_model_path = _get_local_model_path()
@@ -124,7 +123,7 @@ def load_vector_store() -> Optional[FAISS]:
         vector_store = FAISS.load_local(
             FAISS_INDEX_DIR,
             embeddings,
-            allow_dangerous_deserialization=True
+            allow_dangerous_deserialization=(allow_dangerous in ("1", "true", "yes"))
         )
         logger.info(f"✅ 向量库加载成功，共 {vector_store.index.ntotal} 条记录")
         return vector_store

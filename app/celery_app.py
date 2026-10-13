@@ -75,5 +75,5 @@ def on_worker_ready(**kwargs):
     print("✅ Celery Worker 已就绪", flush=True)
     print(f"🔧 池类型: {celery_app.conf.worker_pool or '默认'}", flush=True)
     print(f"🔧 并发数: {celery_app.conf.worker_concurrency}", flush=True)
-    print(f"🔧 向量索引目录: {os.getenv('FAISS_INDEX_DIR', '未设置')}", flush=True)
+    print(f"🔧 向量索引目录: {vector_store.FAISS_INDEX_DIR}", flush=True)
     print(f"🔧 平台: {sys.platform}", flush=True)

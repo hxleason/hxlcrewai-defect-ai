@@ -1,5 +1,5 @@
 """
-app/core/utils.py – FMEA 核心工具函数（知识库增强版 v3.2）
+app/core/utils.py – FMEA 核心工具函数（知识库增强版 v3.4 终极版）
 
 提供：
     - fmea_calculator: 基于规则引擎 + 专家规则 + 案例库的缺陷风险评估
@@ -11,12 +11,32 @@ app/core/utils.py – FMEA 核心工具函数（知识库增强版 v3.2）
     - 专家规则根据缺陷特征动态调整 S/O/D，并记录规则应用情况。
     - 相似案例检索作为附加信息返回，供下游进一步分析或人工审核。
     - 所有输出字段完整，保证下游流水线不因缺失 key 而崩溃。
+    - 失败关闭（fail-closed）：任何规则/评估异常都会强制 review_required=True，
+      宁可多审，不可漏判。
 
-v3.2 修复与增强：
-    - 壁厚字段名兼容：支持 wall_thickness / design_wall_thickness / nominal_thickness 等。
-    - 修复案例库数据存在 Ellipsis 等异常类型时导致 .lower() 报错的问题。
-    - 增加对案例库返回值的类型检查，确保可靠性。
-    - 相似案例检索增加更多字段容错。
+版本历史：
+    v3.2: 壁厚字段名兼容（wall_thickness / design_wall_thickness /
+          nominal_thickness 等）；修复案例库 Ellipsis 等异常类型导致
+          .lower() 报错；增加案例库返回值类型检查；相似案例检索字段容错。
+    v3.3: 接入统一审核闸门 app/core/review_gate.needs_review；
+          失败关闭（规则引擎单条规则失败 → review_required=True，
+          专家规则调整异常不再静默忽略）；
+          新增 review_reasons / rule_failures 输出字段；
+          修复 quantity=None 时 `quantity >= 1` 抛 TypeError；
+          壁厚参数增加字符串/非法类型容错。
+    v3.4: 失败关闭原因文案泛化（覆盖 rule_engine v5.2 的规则失败与
+          输入异常两种来源）；专家规则调整失败同步写入 rule_failures
+          （审计轨迹完整）；triggered_rules / rule_failures / warnings
+          增加类型防御（上游返回非列表不崩溃）；模块级 __all__。
+
+依赖契约：
+    - app.core.rule_engine.rule_engine.evaluate(defect) 返回字典，
+      包含 severity/occurrence/detection/rpn/triggered_rules/standard_ref，
+      以及 v5.1+ 的 review_required / rule_failures / warnings。
+    - app.core.review_gate.needs_review(defect_dict) -> bool。
+    - app.core.knowledge_base.get_knowledge_base() -> KnowledgeBase，
+      提供 get_case_baseline_sod / match_expert_rules /
+      apply_rule_adjustments / search_similar_cases。
 """
 
 import logging
@@ -26,8 +46,12 @@ from typing import Optional, List, Dict, Any, Tuple
 from app.core.rule_engine import rule_engine
 # 导入知识库引擎（新增）
 from app.core.knowledge_base import KnowledgeBase, get_knowledge_base
+# v3.3：统一审核闸门（Phase 1 交付，评估报告 6.1）
+from app.core.review_gate import needs_review
 
 logger = logging.getLogger("defect_fmea.utils")
+
+__all__ = ["fmea_calculator", "diagnosis_reasons"]
 
 # ---------------------------------------------------------------------------
 # 知识库惰性加载（避免模块导入时因文件缺失导致崩溃）
@@ -57,9 +81,9 @@ def _calculate_risk_level(rpn: int) -> Tuple[str, int]:
     根据 RPN 值计算风险等级文字描述和等级数值（全系统统一四级）。
 
     等级划分：
-        RPN ≤ 50      -> 低风险   (level 1)
-        50 < RPN ≤ 100 -> 中风险  (level 2)
-        100 < RPN ≤ 200 -> 高风险 (level 3)
+        RPN ≤ 50       -> 低风险   (level 1)
+        50 < RPN ≤ 100 -> 中风险   (level 2)
+        100 < RPN ≤ 200 -> 高风险  (level 3)
         RPN > 200      -> 极高风险 (level 4)
     """
     if rpn > 200:
@@ -89,6 +113,29 @@ def _extract_wall_thickness_from_kwargs(kwargs: Dict[str, Any]) -> Optional[floa
             except (TypeError, ValueError):
                 continue
     return None
+
+
+def _review_gate(defect_snapshot: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
+    """
+    v3.3 新增：调用统一审核闸门判定是否需要人工复核。
+
+    契约：app.core.review_gate.needs_review(defect_dict) -> bool。
+    若闸门异常（签名不匹配等），启用本地兜底阈值（RPN>100 或 S>=8），
+    并记录完整堆栈——闸门是确定性阈值判断，异常即编程错误，必须显式暴露。
+
+    返回：(是否需复核, 原因文本或 None)
+    """
+    try:
+        if needs_review(defect_snapshot):
+            return True, "命中统一审核闸门（needs_review）"
+        return False, None
+    except Exception:
+        logger.exception("统一审核闸门调用失败，启用本地兜底阈值")
+        rpn = defect_snapshot.get("rpn", 0) or 0
+        severity = defect_snapshot.get("severity", 0) or 0
+        if rpn > 100 or severity >= 8:
+            return True, "审核闸门异常，本地兜底判定需人工复核"
+        return False, None
 
 
 def fmea_calculator(
@@ -134,6 +181,8 @@ def fmea_calculator(
         - message : str
         - warning : Optional[str]
         - review_required : bool
+        - review_reasons : List[str]      # v3.3 新增：需复核的原因清单
+        - rule_failures : List[Dict]      # v3.3 新增：规则失败明细（审计溯源）
         - severity / occurrence / detection : int
         - rpn : int
         - risk_level : str
@@ -155,8 +204,16 @@ def fmea_calculator(
     })
 
     # ------------------------------------------------------------------
-    # 0. 壁厚兼容性处理：若 wall_thickness 未提供或无效，尝试从 kwargs 中提取
+    # 0. 参数容错与壁厚兼容性处理
     # ------------------------------------------------------------------
+    # v3.3：壁厚参数类型容错（字符串 / 非法类型不崩溃）
+    if wall_thickness is not None:
+        try:
+            wall_thickness = float(wall_thickness)
+        except (TypeError, ValueError):
+            logger.warning("壁厚参数类型无效，已忽略: %r", wall_thickness)
+            wall_thickness = None
+
     if wall_thickness is None or wall_thickness <= 0:
         # 1) 检查 kwargs 是否直接包含备用壁厚字段
         backup_thickness = _extract_wall_thickness_from_kwargs(kwargs)
@@ -186,9 +243,12 @@ def fmea_calculator(
     base_source = ""
     source_case = None
     standard_ref = ""
-    triggered_rules = []
+    triggered_rules: List[Any] = []
     warning = None
     review_required = False
+    # v3.3：审核原因清单与规则失败明细（所有返回路径均携带，保证下游 key 完整）
+    review_reasons: List[str] = []
+    rule_failures: List[Dict[str, Any]] = []
 
     # 构建用于知识库匹配的特征字典
     features = {
@@ -207,12 +267,21 @@ def fmea_calculator(
 
     # 壁厚有效时的标准路径：调用基础规则引擎
     if wall_thickness is not None and wall_thickness > 0:
+        # v3.3：数量参数容错（None / 非法类型 / 非正数一律回退为 1）
+        try:
+            quantity_int = int(quantity) if quantity is not None else 1
+        except (TypeError, ValueError):
+            logger.warning("数量参数无效，回退为 1: %r", quantity)
+            quantity_int = 1
+        if quantity_int < 1:
+            quantity_int = 1
+
         defect = {
             "type": defect_type,
             "length_mm": length_mm if length_mm is not None else None,
             "depth_mm": depth_mm if depth_mm is not None else None,
             "wall_thickness": float(wall_thickness),
-            "quantity": int(quantity) if quantity >= 1 else 1,
+            "quantity": quantity_int,
         }
         logger.debug("调用基础规则引擎评估缺陷: %s", defect)
         try:
@@ -223,7 +292,8 @@ def fmea_calculator(
                 "error": True,
                 "message": f"规则引擎内部错误: {e}",
                 "warning": None,
-                "review_required": False,
+                # v3.3：规则引擎整体崩溃 → 失败关闭，强制人工复核
+                "review_required": True,
                 "severity": 0,
                 "occurrence": 0,
                 "detection": 0,
@@ -238,15 +308,35 @@ def fmea_calculator(
                 "similar_case_measures": [],
                 "base_source": "",
                 "source_case": None,
+                "review_reasons": ["规则引擎内部错误（失败关闭）"],
+                "rule_failures": [{"rule_id": "engine.evaluate", "error": str(e)}],
             }
 
         # 从基础结果中提取数据
         base_s = base_result.get("severity", 0)
         base_o = base_result.get("occurrence", 0)
         base_d = base_result.get("detection", 0)
-        standard_ref = base_result.get("standard_ref", "")
-        triggered_rules = base_result.get("triggered_rules", [])
+        standard_ref = base_result.get("standard_ref", "") or ""
         base_source = "rule_engine"
+
+        # v3.4：上游字段类型防御（非列表一律置空，防止后续 append 崩溃）
+        _triggered = base_result.get("triggered_rules", [])
+        triggered_rules = _triggered if isinstance(_triggered, list) else []
+
+        _failures = base_result.get("rule_failures", [])
+        rule_failures = _failures if isinstance(_failures, list) else []
+
+        # v3.4：联动 rule_engine v5.1/v5.2 的失败关闭信号
+        # review_required 可能来自：① 单条规则失败 ② 无规则命中 ③ 输入数据异常
+        if base_result.get("review_required"):
+            review_required = True
+            review_reasons.append(
+                "规则引擎评估异常（失败关闭，详见 rule_failures / warning）"
+            )
+
+        _warnings = base_result.get("warnings", [])
+        if isinstance(_warnings, list) and _warnings:
+            warning = "; ".join(str(w) for w in _warnings)
 
     else:
         # ------------------------------------------------------------------
@@ -255,6 +345,7 @@ def fmea_calculator(
         logger.warning("壁厚缺失，尝试从案例库获取基准 S/O/D")
         warning = "缺少有效壁厚，已基于历史案例库的相似案例基准 S/O/D 进行评估，建议人工复核。"
         review_required = True
+        review_reasons.append("缺少有效壁厚，基于案例库降级评估")
 
         kb = _get_kb()
         if kb is None:
@@ -278,6 +369,8 @@ def fmea_calculator(
                 "similar_case_measures": [],
                 "base_source": "case_baseline",
                 "source_case": None,
+                "review_reasons": ["缺少有效壁厚，知识库不可用，无法降级评估"],
+                "rule_failures": [],
             }
 
         try:
@@ -316,6 +409,8 @@ def fmea_calculator(
                 "similar_case_measures": [],
                 "base_source": "case_baseline",
                 "source_case": None,
+                "review_reasons": ["缺少有效壁厚，案例库无匹配基准 S/O/D"],
+                "rule_failures": [],
             }
 
         base_s, base_o, base_d = int(avg_s), int(avg_o), int(avg_d)
@@ -326,7 +421,7 @@ def fmea_calculator(
     # ------------------------------------------------------------------
     # 2. 知识库增强：专家规则匹配与调整
     # ------------------------------------------------------------------
-    rule_applications = []
+    rule_applications: List[Dict[str, Any]] = []
     adjusted_s, adjusted_o, adjusted_d = base_s, base_o, base_d
 
     kb = _get_kb()
@@ -346,17 +441,25 @@ def fmea_calculator(
                     })
         except Exception as e:
             logger.error("专家规则匹配/调整失败: %s", e, exc_info=True)
-            # 失败不影响基础结果，继续使用基础值
+            # v3.3：失败关闭（评估报告 6.6）——不再静默忽略，强制人工复核
             adjusted_s, adjusted_o, adjusted_d = base_s, base_o, base_d
+            review_required = True
+            review_reasons.append("专家规则调整失败（失败关闭）")
+            # v3.4：同步写入 rule_failures，保证审计轨迹完整
+            rule_failures.append({
+                "rule_id": "expert_rules",
+                "stage": "apply_rule_adjustments",
+                "error": str(e),
+            })
     else:
         logger.debug("知识库不可用，跳过专家规则调整")
 
     # ------------------------------------------------------------------
-    # 3. 相似案例检索
+    # 3. 相似案例检索（辅助信息，失败不强制复核，只记录日志）
     # ------------------------------------------------------------------
-    similar_cases = []
-    similar_case_ids = []
-    similar_case_measures = []
+    similar_cases: List[Dict[str, Any]] = []
+    similar_case_ids: List[Any] = []
+    similar_case_measures: List[str] = []
 
     if kb is not None:
         try:
@@ -398,11 +501,28 @@ def fmea_calculator(
     rpn = adjusted_s * adjusted_o * adjusted_d
     risk_level, level = _calculate_risk_level(rpn)
 
+    # v3.3：统一审核闸门判定（与同步/异步评估路径口径一致）
+    gate_hit, gate_reason = _review_gate({
+        "type": defect_type,
+        "defect_type": defect_type,
+        "severity": adjusted_s,
+        "occurrence": adjusted_o,
+        "detection": adjusted_d,
+        "rpn": rpn,
+        "level": level,
+        "risk_level": risk_level,
+    })
+    if gate_hit:
+        review_required = True
+        review_reasons.append(gate_reason)
+
     result = {
         "error": False,
         "message": "",
         "warning": warning,
         "review_required": review_required,
+        "review_reasons": review_reasons,
+        "rule_failures": rule_failures,
         "severity": adjusted_s,
         "occurrence": adjusted_o,
         "detection": adjusted_d,
@@ -420,11 +540,11 @@ def fmea_calculator(
     }
 
     logger.info(
-        "FMEA 评估完成: type=%s, 基础SOD=%s/%s/%s, 调整后SOD=%s/%s/%s, RPN=%s, 风险=%s",
+        "FMEA 评估完成: type=%s, 基础SOD=%s/%s/%s, 调整后SOD=%s/%s/%s, RPN=%s, 风险=%s, 需复核=%s",
         defect_type,
         base_s, base_o, base_d,
         adjusted_s, adjusted_o, adjusted_d,
-        rpn, risk_level,
+        rpn, risk_level, review_required,
     )
     return result
 

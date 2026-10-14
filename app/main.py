@@ -1,156 +1,156 @@
-ï»¿"""
-FMEA AI Agent â€“ FastAPI åº”ç”¨å…¥å£
-ç‰ˆæœ¬ 4.5.0 Â· ç”Ÿäº§/å¼€å‘ç¯å¢ƒåˆ†ç¦» Â· å®‰å…¨åŠ å›º Â· æ³•è§„è‡ªåŠ¨åŠ è½½ Â· Swagger è®¤è¯æŒ‰é’®
+"""
+FMEA AI Agent ¨C FastAPI Ó¦ÓÃÈë¿Ú
+°æ±¾ 4.5.0 ¡¤ Éú²ú/¿ª·¢»·¾³·ÖÀë ¡¤ °²È«¼Ó¹Ì ¡¤ ·¨¹æ×Ô¶¯¼ÓÔØ ¡¤ Swagger ÈÏÖ¤°´Å¥
 
-ğŸ› ä¿®æ”¹è¯´æ˜ï¼ˆv4.4.1ï¼Œä¿ç•™ï¼‰ï¼š
-- æ³¨å…¥ OpenAPI Security Schemeï¼Œä½¿ Swagger UI æ˜¾ç¤º Authorize ğŸ”’ æŒ‰é’®
-- ç”¨æˆ·ç‚¹å‡»æŒ‰é’®åè¾“å…¥ API Keyï¼Œåç»­æ‰€æœ‰æµ‹è¯•è¯·æ±‚è‡ªåŠ¨æºå¸¦ X-API-Key å¤´
-- ä¿æŒåŸæœ‰ä¸­é—´ä»¶é€»è¾‘ä¸å˜ï¼Œéæ–‡æ¡£è·¯å¾„ä»å¼ºåˆ¶è¦æ±‚è®¤è¯
+?? ĞŞ¸ÄËµÃ÷£¨v4.4.1£¬±£Áô£©£º
+- ×¢Èë OpenAPI Security Scheme£¬Ê¹ Swagger UI ÏÔÊ¾ Authorize ?? °´Å¥
+- ÓÃ»§µã»÷°´Å¥ºóÊäÈë API Key£¬ºóĞøËùÓĞ²âÊÔÇëÇó×Ô¶¯Ğ¯´ø X-API-Key Í·
+- ±£³ÖÔ­ÓĞÖĞ¼ä¼şÂß¼­²»±ä£¬·ÇÎÄµµÂ·¾¶ÈÔÇ¿ÖÆÒªÇóÈÏÖ¤
 
-ğŸ› ä¿®æ”¹è¯´æ˜ï¼ˆv4.5.0ï¼Œæœ¬æ¬¡ Â· Phase 1 å®¡æ ¸é—¨ä¸ä¸€è‡´æ€§é…å¥—ï¼‰ï¼š
-- æ–°å¢ /health å¥åº·æ£€æŸ¥ç«¯ç‚¹ï¼šè¿”å› DB ä¸ Redis è¿é€šçŠ¶æ€ï¼Œ
-  full_evaluation_v2 çš„å¹‚ç­‰é”ä¾èµ– Redisï¼Œè¿ç»´å¯æ®æ­¤å¿«é€Ÿå®šä½é™çº§åŸå› 
-- å¯åŠ¨é˜¶æ®µ fail-fast æ ¡éªŒæ–°å¢æ ¸å¿ƒæ¨¡å—ï¼ˆapp/core/review_gate.pyã€
-  app/core/defect_utils.pyï¼‰ï¼Œç¼ºå¤±æ—¶ç›´æ¥ç»ˆæ­¢å¯åŠ¨ï¼Œé¿å…åŠæŸåçŠ¶æ€è¿è¡Œ
-- å¯åŠ¨é˜¶æ®µå¢åŠ  Redis è¿é€šæ€§æ£€æŸ¥ï¼ˆå¤±è´¥ä»…å‘Šè­¦ï¼Œä¸é˜»æ–­å¯åŠ¨ï¼‰
-- æ–°å¢å…¨å±€å¼‚å¸¸å¤„ç†å™¨ï¼šFMEABaseException ç»“æ„åŒ–æ˜ å°„ + å…œåº• Exceptionï¼Œ
-  ä¿è¯ä»»ä½•è·¯ç”±æŠ›å‡ºçš„ä¸šåŠ¡å¼‚å¸¸éƒ½è¿”å›ç»Ÿä¸€ JSON é”™è¯¯ç»“æ„
+?? ĞŞ¸ÄËµÃ÷£¨v4.5.0£¬±¾´Î ¡¤ Phase 1 ÉóºËÃÅÓëÒ»ÖÂĞÔÅäÌ×£©£º
+- ĞÂÔö /health ½¡¿µ¼ì²é¶Ëµã£º·µ»Ø DB Óë Redis Á¬Í¨×´Ì¬£¬
+  full_evaluation_v2 µÄÃİµÈËøÒÀÀµ Redis£¬ÔËÎ¬¿É¾İ´Ë¿ìËÙ¶¨Î»½µ¼¶Ô­Òò
+- Æô¶¯½×¶Î fail-fast Ğ£ÑéĞÂÔöºËĞÄÄ£¿é£¨app/core/review_gate.py¡¢
+  app/core/defect_utils.py£©£¬È±Ê§Ê±Ö±½ÓÖÕÖ¹Æô¶¯£¬±ÜÃâ°ëËğ»µ×´Ì¬ÔËĞĞ
+- Æô¶¯½×¶ÎÔö¼Ó Redis Á¬Í¨ĞÔ¼ì²é£¨Ê§°Ü½ö¸æ¾¯£¬²»×è¶ÏÆô¶¯£©
+- ĞÂÔöÈ«¾ÖÒì³£´¦ÀíÆ÷£ºFMEABaseException ½á¹¹»¯Ó³Éä + ¶µµ× Exception£¬
+  ±£Ö¤ÈÎºÎÂ·ÓÉÅ×³öµÄÒµÎñÒì³£¶¼·µ»ØÍ³Ò» JSON ´íÎó½á¹¹
 """
 import logging
 import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
-from fastapi.openapi.utils import get_openapi   # â† æ–°å¢å¯¼å…¥
+from fastapi.openapi.utils import get_openapi   # ¡û ĞÂÔöµ¼Èë
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-# â”€â”€ æ—¥å¿—é…ç½®ï¼ˆæœ€å…ˆæ‰§è¡Œï¼‰ â”€â”€
+# ©¤©¤ ÈÕÖ¾ÅäÖÃ£¨×îÏÈÖ´ĞĞ£© ©¤©¤
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger("fmea.main")
 
-# â”€â”€ æ•°æ®åº“å¼•æ“ï¼ˆå”¯ä¸€å…¥å£ï¼‰ â”€â”€
+# ©¤©¤ Êı¾İ¿âÒıÇæ£¨Î¨Ò»Èë¿Ú£© ©¤©¤
 try:
     from app.db.database import engine, Base, SessionLocal
 except ImportError:
-    logger.critical("âŒ æ— æ³•å¯¼å…¥æ•°æ®åº“æ¨¡å—ï¼Œè¯·æ£€æŸ¥ `app/db/database.py`", exc_info=True)
+    logger.critical("? ÎŞ·¨µ¼ÈëÊı¾İ¿âÄ£¿é£¬Çë¼ì²é `app/db/database.py`", exc_info=True)
     sys.exit(1)
 
-# â”€â”€ é…ç½® â”€â”€
+# ©¤©¤ ÅäÖÃ ©¤©¤
 try:
     from app.core.config import settings
 except ImportError:
-    logger.critical("âŒ æ— æ³•å¯¼å…¥é…ç½®æ¨¡å— `app.core.config`", exc_info=True)
+    logger.critical("? ÎŞ·¨µ¼ÈëÅäÖÃÄ£¿é `app.core.config`", exc_info=True)
     sys.exit(1)
 
-# â”€â”€ v4.5.0 æ ¸å¿ƒä¸€è‡´æ€§æ¨¡å—æ ¡éªŒï¼ˆfail-fastï¼‰â”€â”€
+# ©¤©¤ v4.5.0 ºËĞÄÒ»ÖÂĞÔÄ£¿éĞ£Ñé£¨fail-fast£©©¤©¤
 try:
-    from app.core.review_gate import needs_review  # noqa: F401 ç»Ÿä¸€å®¡æ ¸é—¸é—¨
-    from app.core.defect_utils import (            # noqa: F401 ç¼ºé™·å·¥å…·å”¯ä¸€å®ç°
+    from app.core.review_gate import needs_review  # noqa: F401 Í³Ò»ÉóºËÕ¢ÃÅ
+    from app.core.defect_utils import (            # noqa: F401 È±Ïİ¹¤¾ßÎ¨Ò»ÊµÏÖ
         propagate_wall_thickness,
         assign_temp_defect_ids,
     )
 except ImportError:
     logger.critical(
-        "âŒ Phase 1 æ ¸å¿ƒæ¨¡å—ç¼ºå¤±ï¼šè¯·ç¡®è®¤ app/core/review_gate.py ä¸ "
-        "app/core/defect_utils.py å·²åˆ›å»º", exc_info=True,
+        "? Phase 1 ºËĞÄÄ£¿éÈ±Ê§£ºÇëÈ·ÈÏ app/core/review_gate.py Óë "
+        "app/core/defect_utils.py ÒÑ´´½¨", exc_info=True,
     )
     sys.exit(1)
 
-# â”€â”€ è·¯ç”±å¯¼å…¥ â”€â”€
+# ©¤©¤ Â·ÓÉµ¼Èë ©¤©¤
 try:
     from app.api.routes import router as project_router
     from app.routers.analysis_tasks import router as analysis_router
     from app.routers.fmea import router as fmea_router
 except ImportError:
-    logger.critical("âŒ è·¯ç”±æ¨¡å—å¯¼å…¥å¤±è´¥ï¼Œè¯·æ£€æŸ¥è·¯å¾„", exc_info=True)
+    logger.critical("? Â·ÓÉÄ£¿éµ¼ÈëÊ§°Ü£¬Çë¼ì²éÂ·¾¶", exc_info=True)
     sys.exit(1)
 
-# â”€â”€ å®‰å…¨ä¸­é—´ä»¶ â”€â”€
+# ©¤©¤ °²È«ÖĞ¼ä¼ş ©¤©¤
 try:
     from app.auth import APIKeyMiddleware
 except ImportError:
-    logger.critical("âŒ å®‰å…¨ä¸­é—´ä»¶ `app.auth.APIKeyMiddleware` å¯¼å…¥å¤±è´¥", exc_info=True)
+    logger.critical("? °²È«ÖĞ¼ä¼ş `app.auth.APIKeyMiddleware` µ¼ÈëÊ§°Ü", exc_info=True)
     sys.exit(1)
 
-# â”€â”€ ä¸šåŠ¡å¼‚å¸¸ï¼ˆç”¨äºå…¨å±€å¼‚å¸¸å¤„ç†å™¨ï¼‰â”€â”€
+# ©¤©¤ ÒµÎñÒì³££¨ÓÃÓÚÈ«¾ÖÒì³£´¦ÀíÆ÷£©©¤©¤
 try:
     from app.core.exceptions import FMEABaseException
 except ImportError:
-    logger.critical("âŒ å¼‚å¸¸æ¨¡å— `app.core.exceptions` å¯¼å…¥å¤±è´¥", exc_info=True)
+    logger.critical("? Òì³£Ä£¿é `app.core.exceptions` µ¼ÈëÊ§°Ü", exc_info=True)
     sys.exit(1)
 
 
-# â”€â”€ ç”Ÿå‘½å‘¨æœŸç®¡ç† â”€â”€
+# ©¤©¤ ÉúÃüÖÜÆÚ¹ÜÀí ©¤©¤
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """åº”ç”¨ç”Ÿå‘½å‘¨æœŸï¼šå¯åŠ¨æ—¶æŒ‰éœ€å»ºè¡¨ & åŠ è½½æ³•è§„ & æ£€æŸ¥ä¾èµ–ï¼Œå…³é—­æ—¶é‡Šæ”¾èµ„æº"""
-    # ---- å¯åŠ¨é˜¶æ®µ ----
-    logger.info("ğŸš€ åº”ç”¨å¯åŠ¨ä¸­ï¼Œç¯å¢ƒ: %s", settings.ENV)
+    """Ó¦ÓÃÉúÃüÖÜÆÚ£ºÆô¶¯Ê±°´Ğè½¨±í & ¼ÓÔØ·¨¹æ & ¼ì²éÒÀÀµ£¬¹Ø±ÕÊ±ÊÍ·Å×ÊÔ´"""
+    # ---- Æô¶¯½×¶Î ----
+    logger.info("?? Ó¦ÓÃÆô¶¯ÖĞ£¬»·¾³: %s", settings.ENV)
 
-    # 1. æ•°æ®åº“åˆå§‹åŒ–
+    # 1. Êı¾İ¿â³õÊ¼»¯
     if settings.ENV == "development":
-        logger.info("ğŸ”„ [å¼€å‘æ¨¡å¼] è‡ªåŠ¨åˆ›å»ºæ•°æ®åº“è¡¨...")
+        logger.info("?? [¿ª·¢Ä£Ê½] ×Ô¶¯´´½¨Êı¾İ¿â±í...")
         try:
             Base.metadata.create_all(bind=engine)
-            logger.info("âœ… æ•°æ®åº“è¡¨å·²å°±ç»ªï¼ˆé€šè¿‡ create_allï¼‰")
+            logger.info("? Êı¾İ¿â±íÒÑ¾ÍĞ÷£¨Í¨¹ı create_all£©")
         except Exception:
-            logger.critical("âŒ æ•°æ®åº“åˆå§‹åŒ–å¤±è´¥ï¼Œåº”ç”¨ç»ˆæ­¢", exc_info=True)
+            logger.critical("? Êı¾İ¿â³õÊ¼»¯Ê§°Ü£¬Ó¦ÓÃÖÕÖ¹", exc_info=True)
             raise
     else:
         logger.info(
-            "ğŸ”’ [%s æ¨¡å¼] æ•°æ®åº“è¡¨ç”± Alembic è¿ç§»ç®¡ç†ï¼Œè·³è¿‡è‡ªåŠ¨å»ºè¡¨",
+            "?? [%s Ä£Ê½] Êı¾İ¿â±íÓÉ Alembic Ç¨ÒÆ¹ÜÀí£¬Ìø¹ı×Ô¶¯½¨±í",
             settings.ENV.upper(),
         )
 
-    # 2. æ³•è§„é¢„åŠ è½½ï¼ˆéé˜»å¡ï¼Œå¤±è´¥åªè®°å½•è­¦å‘Šï¼‰
+    # 2. ·¨¹æÔ¤¼ÓÔØ£¨·Ç×èÈû£¬Ê§°ÜÖ»¼ÇÂ¼¾¯¸æ£©
     try:
         from app.core.regulation_loader import load_regulation_folder
 
         load_regulation_folder()
-        logger.info("ğŸ“š æ³•è§„åº“é¢„åŠ è½½å®Œæˆ")
+        logger.info("?? ·¨¹æ¿âÔ¤¼ÓÔØÍê³É")
     except Exception:
-        logger.warning("âš ï¸ æ³•è§„é¢„åŠ è½½å¤±è´¥ï¼ˆä¸å½±å“æ ¸å¿ƒåŠŸèƒ½ï¼‰", exc_info=True)
+        logger.warning("?? ·¨¹æÔ¤¼ÓÔØÊ§°Ü£¨²»Ó°ÏìºËĞÄ¹¦ÄÜ£©", exc_info=True)
 
-    # 3. Redis è¿é€šæ€§æ£€æŸ¥ï¼ˆv4.5.0 æ–°å¢ï¼‰
-    #    full_evaluation_v2 çš„å¹‚ç­‰é”ä¾èµ– Redisï¼›å¤±è´¥ä»…å‘Šè­¦ï¼Œä¸é˜»æ–­å¯åŠ¨ã€‚
+    # 3. Redis Á¬Í¨ĞÔ¼ì²é£¨v4.5.0 ĞÂÔö£©
+    #    full_evaluation_v2 µÄÃİµÈËøÒÀÀµ Redis£»Ê§°Ü½ö¸æ¾¯£¬²»×è¶ÏÆô¶¯¡£
     try:
         from app.tasks.analysis import redis_client
 
         redis_client.ping()
-        logger.info("ğŸ§± Redis è¿æ¥æ­£å¸¸ï¼ˆå¹‚ç­‰é”å¯ç”¨ï¼‰")
+        logger.info("?? Redis Á¬½ÓÕı³££¨ÃİµÈËø¿ÉÓÃ£©")
     except Exception:
         logger.warning(
-            "âš ï¸ Redis è¿æ¥å¤±è´¥ï¼šfull_evaluation_v2 å¹‚ç­‰é”å°†ä¸å¯ç”¨ï¼Œ"
-            "æç«¯æƒ…å†µä¸‹å¯èƒ½é‡å¤åˆ›å»ºè¯„ä¼°å·¥ä½œæµ", exc_info=True,
+            "?? Redis Á¬½ÓÊ§°Ü£ºfull_evaluation_v2 ÃİµÈËø½«²»¿ÉÓÃ£¬"
+            "¼«¶ËÇé¿öÏÂ¿ÉÄÜÖØ¸´´´½¨ÆÀ¹À¹¤×÷Á÷", exc_info=True,
         )
 
-    yield  # åº”ç”¨è¿è¡Œä¸­
+    yield  # Ó¦ÓÃÔËĞĞÖĞ
 
-    # ---- å…³é—­é˜¶æ®µ ----
-    logger.info("ğŸ›‘ åº”ç”¨å…³é—­ï¼Œæ¸…ç†èµ„æº")
+    # ---- ¹Ø±Õ½×¶Î ----
+    logger.info("?? Ó¦ÓÃ¹Ø±Õ£¬ÇåÀí×ÊÔ´")
 
 
-# â”€â”€ FastAPI å®ä¾‹ â”€â”€
+# ©¤©¤ FastAPI ÊµÀı ©¤©¤
 app = FastAPI(
-    title="ç‰¹ç§è®¾å¤‡ç¼ºé™·è§£æä¸FMEAè¯„ä¼°ç³»ç»Ÿ",
-    description="å¤šæ™ºèƒ½ä½“ååŒå¤æ‚å·¥ä½œæµå·¥ä¸šçº§è¯„ä¼°",
+    title="ÌØÖÖÉè±¸È±Ïİ½âÎöÓëFMEAÆÀ¹ÀÏµÍ³",
+    description="¶àÖÇÄÜÌåĞ­Í¬¸´ÔÓ¹¤×÷Á÷¹¤Òµ¼¶ÆÀ¹À",
     version="4.5.0",
     lifespan=lifespan,
 )
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-#  ğŸ‘‘ è®© Swagger UI æ˜¾ç¤º ğŸ”’ Authorize æŒ‰é’®çš„æ ¸å¿ƒä»£ç 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T
+#  ?? ÈÃ Swagger UI ÏÔÊ¾ ?? Authorize °´Å¥µÄºËĞÄ´úÂë
+# ¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T
 def custom_openapi():
-    """æ³¨å…¥ X-API-Key è®¤è¯æ–¹æ¡ˆåˆ° OpenAPI æ–‡æ¡£"""
+    """×¢Èë X-API-Key ÈÏÖ¤·½°¸µ½ OpenAPI ÎÄµµ"""
     if app.openapi_schema:
         return app.openapi_schema
 
-    # ç”ŸæˆåŸºç¡€ OpenAPI schema
+    # Éú³É»ù´¡ OpenAPI schema
     openapi_schema = get_openapi(
         title=app.title,
         version=app.version,
@@ -158,43 +158,43 @@ def custom_openapi():
         routes=app.routes,
     )
 
-    # å®šä¹‰ Security Schemeï¼ˆAPI Keyï¼Œæ”¾åœ¨ Header ä¸­ï¼‰
+    # ¶¨Òå Security Scheme£¨API Key£¬·ÅÔÚ Header ÖĞ£©
     openapi_schema["components"]["securitySchemes"] = {
         "ApiKeyHeader": {
             "type": "apiKey",
             "in": "header",
             "name": "X-API-Key",
-            "description": "è¾“å…¥åˆæ³•çš„ API Keyï¼ˆä¾‹å¦‚ 20051207hxlï¼‰"
+            "description": "ÊäÈëºÏ·¨µÄ API Key£¨ÀıÈç your-api-key£©"
         }
     }
 
-    # ğŸŒ å…¨å±€åº”ç”¨æ­¤å®‰å…¨æ–¹æ¡ˆï¼ˆæ‰€æœ‰ç«¯ç‚¹éƒ½ä¼šæ˜¾ç¤ºå°é”ï¼‰
+    # ?? È«¾ÖÓ¦ÓÃ´Ë°²È«·½°¸£¨ËùÓĞ¶Ëµã¶¼»áÏÔÊ¾Ğ¡Ëø£©
     openapi_schema["security"] = [{"ApiKeyHeader": []}]
 
     app.openapi_schema = openapi_schema
     return openapi_schema
 
 
-# æ›¿æ¢é»˜è®¤çš„ openapi() æ–¹æ³•
+# Ìæ»»Ä¬ÈÏµÄ openapi() ·½·¨
 app.openapi = custom_openapi
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T
 
-# â”€â”€ æŒ‚è½½å®‰å…¨ä¸­é—´ä»¶ï¼ˆå¿…é¡»åœ¨è·¯ç”±æ³¨å†Œä¹‹å‰ï¼‰ â”€â”€
+# ©¤©¤ ¹ÒÔØ°²È«ÖĞ¼ä¼ş£¨±ØĞëÔÚÂ·ÓÉ×¢²áÖ®Ç°£© ©¤©¤
 app.add_middleware(APIKeyMiddleware)
 
-# â”€â”€ æ³¨å†Œè·¯ç”± â”€â”€
+# ©¤©¤ ×¢²áÂ·ÓÉ ©¤©¤
 app.include_router(project_router)
 app.include_router(analysis_router)
 app.include_router(fmea_router)
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-#  v4.5.0 å…¨å±€å¼‚å¸¸å¤„ç†å™¨ï¼ˆç»“æ„åŒ–é”™è¯¯è¾“å‡ºï¼‰
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T
+#  v4.5.0 È«¾ÖÒì³£´¦ÀíÆ÷£¨½á¹¹»¯´íÎóÊä³ö£©
+# ¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T
 @app.exception_handler(FMEABaseException)
 async def fmea_exception_handler(request: Request, exc: FMEABaseException):
-    """ä¸šåŠ¡å¼‚å¸¸ç»Ÿä¸€æ˜ å°„ä¸ºç»“æ„åŒ– HTTP é”™è¯¯ï¼ˆä¸è·¯ç”±å±‚è¡Œä¸ºä¸€è‡´ï¼‰"""
-    logger.warning("å…¨å±€ä¸šåŠ¡å¼‚å¸¸ [%s]: %s", exc.error_code, exc)
+    """ÒµÎñÒì³£Í³Ò»Ó³ÉäÎª½á¹¹»¯ HTTP ´íÎó£¨ÓëÂ·ÓÉ²ãĞĞÎªÒ»ÖÂ£©"""
+    logger.warning("È«¾ÖÒµÎñÒì³£ [%s]: %s", exc.error_code, exc)
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -207,39 +207,39 @@ async def fmea_exception_handler(request: Request, exc: FMEABaseException):
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    """å…œåº•å¼‚å¸¸å¤„ç†å™¨ï¼šè®°å½•å®Œæ•´å †æ ˆï¼Œè¿”å›ç»“æ„åŒ– 500"""
-    logger.exception("æœªå¤„ç†å¼‚å¸¸: %s", exc)
+    """¶µµ×Òì³£´¦ÀíÆ÷£º¼ÇÂ¼ÍêÕû¶ÑÕ»£¬·µ»Ø½á¹¹»¯ 500"""
+    logger.exception("Î´´¦ÀíÒì³£: %s", exc)
     return JSONResponse(
         status_code=500,
         content={
             "error_code": "INTERNAL_ERROR",
-            "message": f"ç³»ç»Ÿå†…éƒ¨é”™è¯¯: {exc}",
+            "message": f"ÏµÍ³ÄÚ²¿´íÎó: {exc}",
         },
     )
 
 
-# â”€â”€ æ ¹ç«¯ç‚¹ â”€â”€
-@app.get("/", tags=["ç³»ç»Ÿä¿¡æ¯"])
+# ©¤©¤ ¸ù¶Ëµã ©¤©¤
+@app.get("/", tags=["ÏµÍ³ĞÅÏ¢"])
 async def root():
     return {
-        "service": "ç‰¹ç§è®¾å¤‡ç¼ºé™·è§£æä¸FMEAè¯„ä¼°",
+        "service": "ÌØÖÖÉè±¸È±Ïİ½âÎöÓëFMEAÆÀ¹À",
         "version": "4.5.0",
         "docs": "/docs",
         "redoc": "/redoc",
     }
 
 
-# â”€â”€ å¥åº·æ£€æŸ¥ï¼ˆv4.5.0 æ–°å¢ï¼‰â”€â”€
-@app.get("/health", tags=["ç³»ç»Ÿä¿¡æ¯"])
+# ©¤©¤ ½¡¿µ¼ì²é£¨v4.5.0 ĞÂÔö£©©¤©¤
+@app.get("/health", tags=["ÏµÍ³ĞÅÏ¢"])
 async def health_check():
     """
-    å¥åº·æ£€æŸ¥ç«¯ç‚¹ï¼šè¿”å›æ•°æ®åº“ä¸ Redis è¿é€šçŠ¶æ€ã€‚
+    ½¡¿µ¼ì²é¶Ëµã£º·µ»ØÊı¾İ¿âÓë Redis Á¬Í¨×´Ì¬¡£
 
-    è¯´æ˜ï¼š
-    - æ’è¿”å› HTTP 200ï¼Œå…·ä½“å¥åº·åº¦ç”± JSON çš„ status å­—æ®µè¡¨è¾¾ï¼Œ
-      ä¾¿äºè´Ÿè½½å‡è¡¡/ç›‘æ§ç³»ç»Ÿè§£æã€‚
-    - status=okï¼šå…¨éƒ¨ä¾èµ–æ­£å¸¸ï¼›status=degradedï¼šè‡³å°‘ä¸€é¡¹ä¾èµ–å¼‚å¸¸ã€‚
-    - Redis ä¸å¯ç”¨æ—¶ full_evaluation_v2 å¹‚ç­‰é”å¤±æ•ˆï¼Œå¯èƒ½é‡å¤åˆ›å»ºå·¥ä½œæµã€‚
+    ËµÃ÷£º
+    - ºã·µ»Ø HTTP 200£¬¾ßÌå½¡¿µ¶ÈÓÉ JSON µÄ status ×Ö¶Î±í´ï£¬
+      ±ãÓÚ¸ºÔØ¾ùºâ/¼à¿ØÏµÍ³½âÎö¡£
+    - status=ok£ºÈ«²¿ÒÀÀµÕı³££»status=degraded£ºÖÁÉÙÒ»ÏîÒÀÀµÒì³£¡£
+    - Redis ²»¿ÉÓÃÊ± full_evaluation_v2 ÃİµÈËøÊ§Ğ§£¬¿ÉÄÜÖØ¸´´´½¨¹¤×÷Á÷¡£
     """
     db_ok = False
     try:
@@ -247,7 +247,7 @@ async def health_check():
             db.execute(text("SELECT 1"))
         db_ok = True
     except Exception as e:
-        logger.warning("å¥åº·æ£€æŸ¥ï¼šæ•°æ®åº“ä¸å¯ç”¨: %s", e)
+        logger.warning("½¡¿µ¼ì²é£ºÊı¾İ¿â²»¿ÉÓÃ: %s", e)
 
     redis_ok = False
     try:
@@ -255,7 +255,7 @@ async def health_check():
 
         redis_ok = bool(redis_client.ping())
     except Exception as e:
-        logger.warning("å¥åº·æ£€æŸ¥ï¼šRedis ä¸å¯ç”¨: %s", e)
+        logger.warning("½¡¿µ¼ì²é£ºRedis ²»¿ÉÓÃ: %s", e)
 
     overall = "ok" if (db_ok and redis_ok) else "degraded"
     return {
@@ -266,7 +266,7 @@ async def health_check():
     }
 
 
-# â”€â”€ ç›´æ¥è¿è¡Œå…¥å£ â”€â”€
+# ©¤©¤ Ö±½ÓÔËĞĞÈë¿Ú ©¤©¤
 
 # ?? uvicorn 0.24 + litellm SecretRedactionFilter ?????? ??
 # litellm 1.97 ? uvicorn.error ??? SecretRedactionFilter?? getMessage() ???? args=None?

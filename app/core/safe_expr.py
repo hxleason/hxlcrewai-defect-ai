@@ -89,6 +89,10 @@ _CMP_OPS = {
     "<=": operator.le,
 }
 
+# 幂运算整数指数上限：防 9**9**9 一类大整数幂运算 DoS。
+# 规则条件均为温度/压力等量级，|指数| <= 1000 绰绰有余。
+_MAX_EXPONENT = 1000
+
 
 def _decode_string_literal(text: str) -> str:
     """解码字符串字面量（含转义）。ast.literal_eval 仅用于字面量，绝对安全。"""
@@ -135,7 +139,9 @@ def _tokenize(expr: str) -> List[Tuple[str, Any, int]]:
 # AST 节点：
 #   ('num', v) ('str', v) ('const', v) ('var', name)
 #   ('unary', op, node)
-#   ('bin', op, left, right)        # 算术/逻辑
+#   ('bin', op, left, right)        # 算术
+#   ('and', left, right)            # 逻辑与，短路
+#   ('or', left, right)             # 逻辑或，短路
 #   ('cmp', [op,...], [node,...])   # 链式比较，Python 语义
 #   ('call', name, [node,...])
 #   ('tuple', [node,...]) ('list', [node,...])
@@ -183,14 +189,14 @@ class _Parser:
         node = self.parse_and()
         while self.is_name("or"):
             self.advance()
-            node = ("bin", "or", node, self.parse_and())
+            node = ("or", node, self.parse_and())
         return node
 
     def parse_and(self):
         node = self.parse_not()
         while self.is_name("and"):
             self.advance()
-            node = ("bin", "and", node, self.parse_not())
+            node = ("and", node, self.parse_not())
         return node
 
     def parse_not(self):
@@ -346,21 +352,24 @@ def _eval(node: Tuple, env: Dict[str, Any]) -> Any:
     if tag == "unary":
         op, child = node[1], node[2]
         v = _eval(child, env)
-        if op == "not":
-            return not v
-        if op == "-":
-            return -v
-        return +v  # '+'
+        try:
+            if op == "not":
+                return not v
+            if op == "-":
+                return -v
+            return +v  # '+'
+        except TypeError as e:
+            raise SafeExprError(f"一元运算类型错误: {op} {v!r} -> {e}")
 
     if tag == "and":  # 短路
-        if not _eval(node[2], env):
+        if not _eval(node[1], env):
             return False
-        return bool(_eval(node[3], env))
+        return bool(_eval(node[2], env))
 
     if tag == "or":  # 短路
-        if _eval(node[2], env):
+        if _eval(node[1], env):
             return True
-        return bool(_eval(node[3], env))
+        return bool(_eval(node[2], env))
 
     if tag == "cmp":  # 链式比较（Python 语义）
         ops, children = node[1], node[2]
@@ -383,6 +392,8 @@ def _eval(node: Tuple, env: Dict[str, Any]) -> Any:
         op, left, right = node[1], node[2], node[3]
         lv = _eval(left, env)
         rv = _eval(right, env)
+        if op == "**" and isinstance(rv, int) and abs(rv) > _MAX_EXPONENT:
+            raise SafeExprError(f"指数超出上限（|指数| <= {_MAX_EXPONENT}）: {rv}")
         fn = _BIN_OPS[op]
         try:
             return fn(lv, rv)

@@ -49,3 +49,8 @@ logs/*.jsonl
 logs/*.meta
 .env.bak
 celerybeat-schedule.dat
+
+# ===== 向量库索引（本地重建，不进 Git）=====
+data/faiss_index/
+data/faiss_index_backup*/
+vectorstore/

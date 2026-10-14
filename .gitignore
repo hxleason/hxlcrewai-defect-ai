@@ -54,3 +54,4 @@ celerybeat-schedule.dat
 data/faiss_index/
 data/faiss_index_backup*/
 vectorstore/
+project_dump.txt

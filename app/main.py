@@ -164,7 +164,7 @@ def custom_openapi():
             "type": "apiKey",
             "in": "header",
             "name": "X-API-Key",
-            "description": "输入合法的 API Key（例如 20051207hxl）"
+            "description": "输入合法的 API Key（例如 your-api-key）"
         }
     }
 
